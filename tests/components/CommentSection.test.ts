@@ -1,0 +1,187 @@
+import { flushPromises, mount } from "@vue/test-utils";
+import { afterEach, describe, expect, it } from "vitest";
+import { ref } from "vue";
+
+import CommentNode from "../../src/components/CommentNode.vue";
+import CommentSection from "../../src/components/CommentSection.vue";
+import { useCommentTree } from "../../src/composables/useCommentTree";
+import { createFakeAdapter, item, SIGNED_IN, TARGET } from "../helpers";
+import { mountSection } from "./mountSection";
+
+afterEach(() => {
+  document.body.innerHTML = "";
+});
+
+const dated = (id: string, day: number, extra = {}) =>
+  item(id, {
+    created_at: `2026-01-${String(day).padStart(2, "0")}T00:00:00Z`,
+    ...extra,
+  });
+
+describe("CommentSection", () => {
+  it("loads its own thread on mount and wraps it in the theme root", async () => {
+    const { wrapper, adapter } = await mountSection({ rows: [item("c1")] });
+
+    expect(adapter.fetchComments).toHaveBeenCalledWith(TARGET);
+    expect(wrapper.classes()).toContain("comments-root");
+    expect(wrapper.find("#comment-node-c1").exists()).toBe(true);
+  });
+
+  it("shows an invitation to comment first when there are no comments", async () => {
+    const { wrapper } = await mountSection({ rows: [] });
+
+    expect(wrapper.find("#comment-section-empty-title").text()).toBe(
+      "Belum ada komentar",
+    );
+    expect(wrapper.find("#comment-section-list").exists()).toBe(false);
+  });
+
+  it("shows the load error only while there is nothing to display", async () => {
+    const adapter = createFakeAdapter();
+    adapter.fetchComments.mockRejectedValue(new Error("down"));
+    const { wrapper } = await mountSection({ adapter });
+
+    expect(wrapper.find("#comment-section-error-text").text()).toBe(
+      "Gagal memuat komentar: down",
+    );
+  });
+
+  it("uses the chosen locale and message overrides", async () => {
+    const { wrapper } = await mountSection({
+      rows: [],
+      props: {
+        locale: "en",
+        messages: { section: { emptyHint: "Say something!" } },
+      },
+    });
+
+    expect(wrapper.find("#comment-section-empty-title").text()).toBe(
+      "No comments yet",
+    );
+    expect(wrapper.find("#comment-section-empty-hint").text()).toBe(
+      "Say something!",
+    );
+  });
+
+  describe("sorting", () => {
+    const rows = [
+      dated("old", 1, { upvote_count: 1 }),
+      dated("mid", 2, { upvote_count: 5 }),
+      dated("new", 3, { is_pinned: true }),
+    ];
+
+    it("is hidden with fewer than two top-level comments", async () => {
+      const { wrapper } = await mountSection({ rows: [item("c1")] });
+
+      expect(wrapper.find("#comment-section-sort").exists()).toBe(false);
+    });
+
+    it("lists the three orders with the current one pressed", async () => {
+      const { wrapper } = await mountSection({ rows });
+
+      const buttons = wrapper.findAll("#comment-section-sort button");
+      expect(buttons.map((b) => b.text())).toEqual([
+        "Terbaru",
+        "Terlama",
+        "Terpopuler",
+      ]);
+      expect(
+        wrapper.find("#comment-section-sort-oldest").attributes("aria-pressed"),
+      ).toBe("true");
+    });
+
+    it("re-orders the visible comments when an order is chosen", async () => {
+      const { wrapper } = await mountSection({ rows });
+
+      await wrapper.find("#comment-section-sort-popular").trigger("click");
+
+      const ids = wrapper
+        .findAll("#comment-section-list > [id^='comment-node-']")
+        .map((n) => n.attributes("id"));
+      expect(ids).toEqual([
+        "comment-node-mid",
+        "comment-node-old",
+        "comment-node-new",
+      ]);
+    });
+
+    it("offers the pinned order first when pinning is enabled", async () => {
+      const { wrapper } = await mountSection({
+        rows,
+        props: { enablePinning: true },
+      });
+
+      expect(
+        wrapper.findAll("#comment-section-sort button").map((b) => b.text()),
+      ).toEqual(["Disematkan", "Terbaru", "Terlama", "Terpopuler"]);
+      expect(wrapper.find("#comment-pinned-badge-new").text()).toBe(
+        "Disematkan",
+      );
+    });
+
+    it("does not show pinned badges while pinning is disabled", async () => {
+      const { wrapper } = await mountSection({ rows });
+
+      expect(wrapper.find("#comment-pinned-badge-new").exists()).toBe(false);
+    });
+  });
+
+  it("offers to load more when comments exceed the first page", async () => {
+    const { wrapper } = await mountSection({
+      rows: Array.from({ length: 12 }, (_, i) => item(`c${i}`)),
+    });
+
+    const button = wrapper.find("#comment-section-load-more-button");
+    expect(button.text()).toBe("Muat lebih banyak (2 tersisa)");
+
+    await button.trigger("click");
+
+    expect(wrapper.find("#comment-section-load-more-button").exists()).toBe(
+      false,
+    );
+    expect(wrapper.findAll("[id^='comment-text-']")).toHaveLength(12);
+  });
+
+  it("renders a host-managed tree without loading it", async () => {
+    const adapter = createFakeAdapter();
+    adapter.fetchComments.mockResolvedValue([item("c1")]);
+    const tree = useCommentTree(adapter, {
+      target: TARGET,
+      viewer: ref(SIGNED_IN),
+    });
+    const wrapper = mount(CommentSection, { props: { tree } });
+    await flushPromises();
+    expect(adapter.fetchComments).not.toHaveBeenCalled();
+    expect(wrapper.find("#comment-node-c1").exists()).toBe(false);
+
+    await tree.load();
+    await flushPromises();
+
+    expect(wrapper.find("#comment-node-c1").exists()).toBe(true);
+  });
+
+  it("only renders comments and forms inside a section", () => {
+    expect(() =>
+      mount(CommentNode, {
+        props: { comment: { ...item("c1"), children: [] } },
+      }),
+    ).toThrow(/inside CommentSection/);
+  });
+
+  it("refuses to render without a tree or an adapter", () => {
+    expect(() => mount(CommentSection)).toThrow(/tree.*adapter/);
+  });
+
+  it("passes handled errors to the error handler", async () => {
+    const adapter = createFakeAdapter();
+    adapter.fetchComments.mockRejectedValue(new Error("raw"));
+    const { wrapper } = await mountSection({
+      adapter,
+      props: { errorHandler: () => "Pesan ramah" },
+    });
+
+    expect(wrapper.find("#comment-section-error-text").text()).toBe(
+      "Gagal memuat komentar: Pesan ramah",
+    );
+  });
+});

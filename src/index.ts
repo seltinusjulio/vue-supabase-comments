@@ -15,3 +15,23 @@ export {
   findComment,
   sortRoots,
 } from "./utils/tree";
+export { default as CommentAvatarFallback } from "./components/CommentAvatarFallback.vue";
+export { default as CommentForm } from "./components/CommentForm.vue";
+export { default as CommentNode } from "./components/CommentNode.vue";
+export { default as CommentSection } from "./components/CommentSection.vue";
+export {
+  COMMENT_SECTION_CONTEXT,
+  type CommentFeatures,
+  type CommentNotification,
+  type CommentSectionContext,
+  type NotifyLevel,
+  type TransformImageUrl,
+  useCommentSectionContext,
+} from "./components/context";
+export { getAvatarColorIndex, getInitials } from "./utils/avatar";
+export {
+  type DateFormatOptions,
+  formatDate,
+  formatDateTime,
+  formatRelativeTime,
+} from "./utils/time";

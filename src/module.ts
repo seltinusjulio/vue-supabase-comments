@@ -1,14 +1,27 @@
-import { addImports, createResolver, defineNuxtModule } from "@nuxt/kit";
+import {
+  addComponent,
+  addImports,
+  createResolver,
+  defineNuxtModule,
+} from "@nuxt/kit";
 
 export interface CommentsModuleOptions {
-  /** Add the default theme (CSS custom properties) to the app. */
+  /** Add the default theme and component styles to the app. */
   css: boolean;
+  /**
+   * Prefix for the auto-registered components, e.g. "Pkg" gives
+   * <PkgCommentSection>. Useful while the host still has components with
+   * the same names.
+   */
+  prefix: string;
 }
 
+const COMPONENTS = ["CommentSection", "CommentNode", "CommentForm"] as const;
+
 /**
- * Optional Nuxt integration: auto-imports the composable and helpers and adds
- * the default theme. Tailwind scanning is not configured here (see
- * styles/comments.css); components are registered once they exist.
+ * Optional Nuxt integration: registers the components, auto-imports the
+ * composable and helpers, and adds the default styles. Tailwind scanning is
+ * not configured here (see styles/comments.css).
  */
 export default defineNuxtModule<CommentsModuleOptions>({
   meta: {
@@ -17,9 +30,17 @@ export default defineNuxtModule<CommentsModuleOptions>({
   },
   defaults: {
     css: true,
+    prefix: "",
   },
   setup(options, nuxt) {
     const resolver = createResolver(import.meta.url);
+
+    for (const name of COMPONENTS) {
+      void addComponent({
+        name: `${options.prefix}${name}`,
+        filePath: resolver.resolve(`./components/${name}.vue`),
+      });
+    }
 
     addImports([
       { name: "useCommentTree", from: resolver.resolve("./index") },
