@@ -1,0 +1,31 @@
+/*
+ * Default theme of the comments module. Hosts override any variable on
+ * `.comments-root`; the defaults live in a layer so unlayered host rules win.
+ *
+ * This file cannot make Tailwind scan the module: a stylesheet without
+ * Tailwind's utilities does not extend the host's sources. Hosts whose Vite
+ * root (Nuxt srcDir) does not contain packages/comments must add
+ * `@source "<relative path>/packages/comments/src";` to their main CSS.
+ */
+@layer base {
+  .comments-root {
+    --comment-primary: #2563eb;
+    --comment-primary-hover: #1d4ed8;
+    --comment-bg: #ffffff;
+    --comment-card-bg: #f8fafc;
+    --comment-text: #1e293b;
+    --comment-text-muted: #64748b;
+    --comment-border: #e2e8f0;
+    --comment-danger: #ef4444;
+    --comment-warning: #f59e0b;
+  }
+
+  .dark .comments-root,
+  [data-theme="dark"] .comments-root {
+    --comment-bg: #0f172a;
+    --comment-card-bg: #1e293b;
+    --comment-text: #f1f5f9;
+    --comment-text-muted: #94a3b8;
+    --comment-border: #334155;
+  }
+}

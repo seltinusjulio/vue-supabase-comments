@@ -1,0 +1,21 @@
+{
+  // Standalone on purpose: it must not extend .nuxt/tsconfig.json, whose
+  // auto-import globals would hide missing imports and leaks of host code.
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": [],
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "jsx": "preserve"
+  },
+  "include": ["src/**/*", "tests/**/*"]
+}
