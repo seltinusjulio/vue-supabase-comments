@@ -121,7 +121,9 @@
     opacity: 0.5;
   }
   .comments-root .cmt-btn--primary {
-    background-color: var(--comment-primary);
+    /* Optional --comment-primary-button lets a host give filled buttons a
+       different shade than links (e.g. a darker blue in dark mode). */
+    background-color: var(--comment-primary-button, var(--comment-primary));
     color: var(--comment-on-primary);
   }
   .comments-root .cmt-btn--primary:hover:not(:disabled) {

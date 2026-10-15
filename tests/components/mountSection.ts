@@ -17,6 +17,8 @@ export interface MountOptions {
   props?: Record<string, unknown>;
   slots?: Record<string, TestSlot | string>;
   adapter?: FakeAdapter;
+  /** Globally registered components, like a host app's auto-imports. */
+  globalComponents?: Record<string, object>;
 }
 
 /** Mounts a CommentSection backed by a fake adapter and waits for the load. */
@@ -33,6 +35,7 @@ export async function mountSection(options: MountOptions = {}) {
     },
     slots: options.slots as Record<string, never>,
     attachTo: document.body,
+    global: { components: options.globalComponents },
   });
   await flushPromises();
   return { wrapper, adapter };

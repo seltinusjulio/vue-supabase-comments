@@ -533,7 +533,7 @@ describe("CommentNode: voting", () => {
     await wrapper.find("#comment-upvote-button-c1").trigger("click");
     await flushPromises();
 
-    expect(adapter.setVote).toHaveBeenCalledWith("c1", "up");
+    expect(adapter.setVote).toHaveBeenCalledWith("c1", "up", null);
     expect(wrapper.find("#comment-upvote-count-c1").text()).toBe("1");
   });
 
@@ -654,6 +654,18 @@ describe("CommentNode: thread layout", () => {
     Array.from({ length: depth }, (_, i) =>
       item(`d${i}`, { parent_comment_id: i ? `d${i - 1}` : null }),
     );
+
+  it("renders replies with itself even when the host registers its own CommentNode", async () => {
+    const { wrapper } = await mountSection({
+      rows: chain(2),
+      globalComponents: {
+        CommentNode: { template: '<div class="host-node" />' },
+      },
+    });
+
+    expect(wrapper.find(".host-node").exists()).toBe(false);
+    expect(wrapper.find("#comment-text-d1").exists()).toBe(true);
+  });
 
   it("only separates top-level comments with a divider", async () => {
     const { wrapper } = await mountSection({ rows: chain(2) });

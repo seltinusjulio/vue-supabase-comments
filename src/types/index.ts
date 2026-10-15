@@ -104,8 +104,15 @@ export interface CommentBackendAdapter {
    * pending review) and handles attachment uploads.
    */
   submitComment(payload: SubmitCommentPayload): Promise<void>;
-  /** Sets the viewer's vote on a comment; `null` removes it. */
-  setVote(commentId: string, vote: VoteType | null): Promise<void>;
+  /**
+   * Sets the viewer's vote on a comment; `null` removes it. `previous` is the
+   * vote the viewer had, so a backend can choose insert, update or delete.
+   */
+  setVote(
+    commentId: string,
+    vote: VoteType | null,
+    previous: VoteType | null,
+  ): Promise<void>;
   updateComment(commentId: string, content: string): Promise<void>;
   /** Hides the viewer's own comment. */
   deleteComment(commentId: string): Promise<void>;

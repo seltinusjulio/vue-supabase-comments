@@ -574,7 +574,7 @@ describe("useCommentTree: voteComment", () => {
     const ok = await tree.voteComment("c1", "up");
 
     expect(ok).toBe(true);
-    expect(adapter.setVote).toHaveBeenCalledWith("c1", "up");
+    expect(adapter.setVote).toHaveBeenCalledWith("c1", "up", null);
     expect(tree.comments.value[0]?.upvote_count).toBe(3);
     expect(tree.comments.value[0]?.downvote_count).toBe(1);
     expect(tree.userVotes.value.c1).toBe("up");
@@ -586,7 +586,7 @@ describe("useCommentTree: voteComment", () => {
 
     await tree.voteComment("c1", "up");
 
-    expect(adapter.setVote).toHaveBeenCalledWith("c1", null);
+    expect(adapter.setVote).toHaveBeenCalledWith("c1", null, "up");
     expect(tree.comments.value[0]?.upvote_count).toBe(1);
     expect(tree.userVotes.value.c1).toBeUndefined();
   });
@@ -596,7 +596,7 @@ describe("useCommentTree: voteComment", () => {
 
     await tree.voteComment("c1", "down");
 
-    expect(adapter.setVote).toHaveBeenCalledWith("c1", "down");
+    expect(adapter.setVote).toHaveBeenCalledWith("c1", "down", "up");
     expect(tree.comments.value[0]?.upvote_count).toBe(1);
     expect(tree.comments.value[0]?.downvote_count).toBe(2);
     expect(tree.userVotes.value.c1).toBe("down");
@@ -607,7 +607,7 @@ describe("useCommentTree: voteComment", () => {
     const tree = setup();
 
     expect(await tree.voteComment("c9", "up")).toBe(true);
-    expect(adapter.setVote).toHaveBeenCalledWith("c9", "up");
+    expect(adapter.setVote).toHaveBeenCalledWith("c9", "up", null);
     expect(tree.userVotes.value.c9).toBe("up");
   });
 

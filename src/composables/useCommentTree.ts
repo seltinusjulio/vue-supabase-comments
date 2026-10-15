@@ -267,7 +267,7 @@ export function useCommentTree(
     setUserVote(commentId, next);
 
     try {
-      await adapter.setVote(commentId, next ?? null);
+      await adapter.setVote(commentId, next ?? null, existing ?? null);
       // A refetch around the vote may carry counts read before it committed.
       if (racedWithFetch()) await refresh();
       return true;
