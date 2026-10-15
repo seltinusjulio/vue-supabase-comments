@@ -1,4 +1,5 @@
 import {
+  type Component,
   type ComputedRef,
   inject,
   type InjectionKey,
@@ -37,6 +38,12 @@ export interface CommentFeatures {
 /** What CommentSection shares with the nodes and forms it renders. */
 export interface CommentSectionContext {
   tree: CommentTree;
+  /**
+   * The comment node component, so replies render it through the context
+   * instead of a self-import or a name lookup (which would resolve to a host
+   * component that happens to be called CommentNode).
+   */
+  nodeComponent: Component;
   messages: ComputedRef<CommentMessages>;
   features: ComputedRef<CommentFeatures>;
   dateOptions: ComputedRef<DateFormatOptions>;

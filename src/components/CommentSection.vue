@@ -240,6 +240,7 @@ onBeforeUnmount(() => clearInterval(clock));
 
 provide(COMMENT_SECTION_CONTEXT, {
   tree,
+  nodeComponent: CommentNode,
   messages,
   features: computed(() => ({
     voting: props.enableVoting,

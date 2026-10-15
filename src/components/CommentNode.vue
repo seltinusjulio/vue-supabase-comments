@@ -389,7 +389,8 @@
           : ''
       "
     >
-      <CommentNodeSelf
+      <component
+        :is="ctx.nodeComponent"
         v-for="child in comment.children"
         :key="child.id"
         :comment="child"
@@ -411,9 +412,6 @@ import CommentDialog from "./CommentDialog.vue";
 import CommentForm from "./CommentForm.vue";
 import CommentIcon from "./CommentIcon.vue";
 import CommentImageViewer from "./CommentImageViewer.vue";
-// Explicit self-import for the reply recursion: an implicit <CommentNode>
-// would resolve to a host's globally registered component of the same name.
-import CommentNodeSelf from "./CommentNode.vue";
 import { useCommentSectionContext } from "./context";
 import SlotOutlet from "./SlotOutlet";
 

@@ -15,7 +15,8 @@ function keys(value: object, prefix = ""): string[] {
 
 describe("locale presets", () => {
   it("define the same keys in Indonesian and English", () => {
-    expect(keys(en).sort()).toEqual(keys(id).sort());
+    const byName = (a: string, b: string) => a.localeCompare(b);
+    expect(keys(en).sort(byName)).toEqual(keys(id).sort(byName));
   });
 
   it.each([
