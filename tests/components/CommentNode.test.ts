@@ -411,6 +411,37 @@ describe("CommentNode: attachments", () => {
     expect(wrapper.find("#comment-image-container-c1").exists()).toBe(false);
   });
 
+  it("lets the thumbnail reopen the viewer after the browser closed it itself", async () => {
+    const { wrapper } = await mountSection({ rows: [withImage] });
+    const open = () =>
+      wrapper.find("#comment-image-open-button-c1").trigger("click");
+    await open();
+    const viewer = wrapper.find("#comment-image-lightbox-c1")
+      .element as HTMLDialogElement;
+    expect(viewer.open).toBe(true);
+
+    // Closed natively without a cancel, as the Android back gesture can do.
+    viewer.close();
+    viewer.dispatchEvent(new Event("close"));
+    await flushPromises();
+    expect(viewer.open).toBe(false);
+
+    await open();
+    expect(viewer.open).toBe(true);
+  });
+
+  it.each([
+    "javascript:alert(document.cookie)",
+    "data:text/html;base64,PHNjcmlwdD4=",
+    "//evil.example/x.pdf",
+  ])("does not link an unsafe file URL (%s)", async (url) => {
+    const { wrapper } = await mountSection({
+      rows: [own({ file_upload_url: url })],
+    });
+
+    expect(wrapper.find("#comment-file-attachment-c1").exists()).toBe(false);
+  });
+
   it("links a file attachment safely in a new tab", async () => {
     const { wrapper } = await mountSection({
       rows: [own({ file_upload_url: "https://x/doc.pdf" })],

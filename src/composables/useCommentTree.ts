@@ -85,6 +85,9 @@ export function useCommentTree(
   // committed can resolve after it with counts read too early.
   let inFlightFetches = 0;
   let lastTarget: CommentTarget | null = null;
+  // Bumped by reset(), so work that was started before a reset (a submit
+  // still in flight) can tell the thread it belonged to is gone.
+  let resetCount = 0;
   // Set after a top-level comment was posted; see revealPendingComment().
   let pendingReveal: {
     knownIds: Set<string>;
@@ -208,7 +211,13 @@ export function useCommentTree(
       }
 
       const knownRootIds = new Set(comments.value.map((c) => c.id));
+      const startedAt = resetCount;
       await adapter.submitComment({ ...target, ...input });
+
+      // The comment is stored, but the thread was reset (e.g. the host moved
+      // to another target) while it was in flight: refetching would put the
+      // old thread into the new one.
+      if (startedAt !== resetCount) return true;
 
       if (!input.parentCommentId) {
         pendingReveal = {
@@ -309,6 +318,7 @@ export function useCommentTree(
   }
 
   function reset() {
+    resetCount++;
     latestRequestId++;
     lastTarget = null;
     pendingReveal = null;

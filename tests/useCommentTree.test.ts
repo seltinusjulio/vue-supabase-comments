@@ -424,6 +424,27 @@ describe("useCommentTree: submitting keeps the new comment visible", () => {
   });
 });
 
+describe("useCommentTree: submitting while the thread is reset", () => {
+  it("does not refetch the old thread into a reset one, and still reports success", async () => {
+    viewer.value = SIGNED_IN;
+    adapter.fetchComments.mockResolvedValue([item("a1")]);
+    const tree = setup();
+    await tree.load();
+    const stored = deferred<void>();
+    adapter.submitComment.mockReturnValue(stored.promise);
+    adapter.fetchComments.mockClear();
+
+    const posting = tree.submitComment({ content: "Amin" });
+    tree.reset();
+    stored.resolve();
+
+    expect(await posting).toBe(true);
+    expect(adapter.fetchComments).not.toHaveBeenCalled();
+    expect(tree.comments.value).toEqual([]);
+    expect(tree.error.value).toBeNull();
+  });
+});
+
 describe("useCommentTree: submitComment validation and errors", () => {
   it("refuses to submit without a signed-in viewer", async () => {
     const tree = setup({ messages: resolveCommentMessages("en") });

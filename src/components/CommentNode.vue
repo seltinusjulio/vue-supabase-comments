@@ -244,9 +244,9 @@
           </button>
         </div>
         <a
-          v-if="comment.file_upload_url"
+          v-if="fileHref"
           :id="`comment-file-attachment-${comment.id}`"
-          :href="comment.file_upload_url"
+          :href="fileHref"
           target="_blank"
           rel="noopener noreferrer"
           class="mt-2 inline-flex items-center gap-1.5 text-sm text-(--comment-primary) hover:underline"
@@ -405,6 +405,7 @@ import { computed, ref } from "vue";
 import type { CommentTreeNode, VoteType } from "../types";
 
 import { formatDateTime, formatRelativeTime } from "../utils/time";
+import { safeLinkUrl } from "../utils/url";
 import CommentAvatarFallback from "./CommentAvatarFallback.vue";
 import CommentDialog from "./CommentDialog.vue";
 import CommentForm from "./CommentForm.vue";
@@ -560,6 +561,10 @@ const onAttachmentError = () => {
     attachmentFailed.value = true;
   }
 };
+
+// The file link comes from the backend; only http(s) and same-site URLs are
+// rendered as links.
+const fileHref = computed(() => safeLinkUrl(props.comment.file_upload_url));
 
 const knownName = computed(
   () => props.comment.author?.name || props.comment.guest_name || "",

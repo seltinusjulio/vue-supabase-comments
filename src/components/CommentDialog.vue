@@ -9,6 +9,7 @@
     :aria-labelledby="labelledby"
     :aria-label="label"
     @cancel.prevent="close"
+    @close="onNativeClose"
     @click="onBackdropClick"
   >
     <slot />
@@ -35,11 +36,23 @@ const dialogRef = ref<HTMLDialogElement | null>(null);
 const sync = (open: boolean) => {
   const dialog = dialogRef.value;
   if (!dialog) return;
-  if (open && !dialog.open) dialog.showModal();
-  else if (!open && dialog.open) dialog.close();
+  if (open && !dialog.open) {
+    dialog.showModal();
+  } else if (!open && dialog.open) {
+    dialog.close();
+  }
 };
 
 const close = () => emit("close");
+
+// The browser can close a modal dialog without a cancelable `cancel` (a second
+// Escape in Chrome, the Android back gesture). Report that, or the parent
+// keeps `open` true and can never reopen the dialog. The native event fires
+// after a close we triggered ourselves too, but by then `open` is already
+// false (and an unmounted component ignores emits), so it is not repeated.
+const onNativeClose = () => {
+  if (props.open) close();
+};
 
 // A click on the dialog element itself (not its content) is a backdrop click.
 const onBackdropClick = (event: MouseEvent) => {
