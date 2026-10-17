@@ -95,12 +95,41 @@
           </div>
         </div>
 
-        <!-- Owner actions -->
+        <!-- Owner & Moderator actions -->
         <div
-          v-if="isOwner && !isEditing"
+          v-if="(isOwner || canModerate) && !isEditing"
           :id="`comment-owner-actions-${comment.id}`"
-          class="-mt-1 -mr-2 flex shrink-0 items-center"
+          class="-mt-1 -mr-2 flex shrink-0 items-center gap-1"
         >
+          <button
+            v-if="canModerate && isPending"
+            :id="`comment-approve-button-${comment.id}`"
+            type="button"
+            class="cmt-action text-emerald-600 hover:text-emerald-700 dark:text-emerald-400"
+            :aria-label="msg.moderation.approve"
+            :title="msg.moderation.approve"
+            :disabled="isModerating"
+            @click="handleApprove"
+          >
+            <CommentIcon name="check" class="h-4 w-4" />
+          </button>
+          <button
+            v-if="features.pinning && canModerate"
+            :id="`comment-pin-button-${comment.id}`"
+            type="button"
+            class="cmt-action"
+            :class="{ 'cmt-action--active': comment.is_pinned }"
+            :aria-label="
+              comment.is_pinned ? msg.moderation.unpin : msg.moderation.pin
+            "
+            :title="
+              comment.is_pinned ? msg.moderation.unpin : msg.moderation.pin
+            "
+            :disabled="isPinning"
+            @click="handleTogglePin"
+          >
+            <CommentIcon name="pin" class="h-4 w-4" />
+          </button>
           <button
             v-if="canEdit"
             :id="`comment-edit-button-${comment.id}`"
@@ -453,6 +482,8 @@ const isSaving = ref(false);
 const isVoting = ref(false);
 const showDeleteConfirm = ref(false);
 const isDeleting = ref(false);
+const isModerating = ref(false);
+const isPinning = ref(false);
 
 const countReplies = (nodes: CommentTreeNode[]): number =>
   nodes.reduce(
@@ -477,6 +508,8 @@ const onReplySuccess = () => {
   repliesExpanded.value = true;
 };
 
+const canModerate = computed(() => !!viewer.value?.canModerate);
+
 const isOwner = computed(
   () => !!viewer.value?.userId && viewer.value.userId === props.comment.user_id,
 );
@@ -499,7 +532,9 @@ const canEdit = computed(
     props.comment.status === "published" &&
     withinEditWindow.value,
 );
-const canDelete = computed(() => isOwner.value && !isHidden.value);
+const canDelete = computed(
+  () => (isOwner.value || canModerate.value) && !isHidden.value,
+);
 
 // Guests (anonymous sessions) cannot vote.
 const canVote = computed(
@@ -648,6 +683,43 @@ const handleVote = async (voteType: VoteType) => {
     if (!success) notifyError(msg.value.node.voteFailed);
   } finally {
     isVoting.value = false;
+  }
+};
+
+const handleApprove = async () => {
+  if (isModerating.value) return;
+  isModerating.value = true;
+  try {
+    const success = await ctx.tree.moderateComment(
+      [props.comment.id],
+      "publish",
+    );
+    if (success) {
+      ctx.notify({
+        level: "success",
+        message: msg.value.moderation.successStatusUpdated,
+      });
+    } else {
+      notifyError(msg.value.moderation.errorStatusUpdate);
+    }
+  } finally {
+    isModerating.value = false;
+  }
+};
+
+const handleTogglePin = async () => {
+  if (isPinning.value) return;
+  isPinning.value = true;
+  try {
+    const success = await ctx.tree.pinComment(
+      props.comment.id,
+      !props.comment.is_pinned,
+    );
+    if (!success) {
+      notifyError(msg.value.moderation.errorStatusUpdate);
+    }
+  } finally {
+    isPinning.value = false;
   }
 };
 </script>

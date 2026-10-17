@@ -32,6 +32,7 @@ export function resolveCommentMessages(
     node: { ...base.node, ...overrides.node },
     time: { ...base.time, ...overrides.time },
     errors: { ...base.errors, ...overrides.errors },
+    moderation: { ...base.moderation, ...overrides.moderation },
   };
 }
 

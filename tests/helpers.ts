@@ -82,6 +82,26 @@ export function createFakeAdapter() {
     deleteComment: vi.fn<CommentBackendAdapter["deleteComment"]>(() =>
       Promise.resolve(),
     ),
+    fetchModerationQueue: vi.fn<
+      NonNullable<CommentBackendAdapter["fetchModerationQueue"]>
+    >(() => Promise.resolve([])),
+    fetchModerationCounts: vi.fn<
+      NonNullable<CommentBackendAdapter["fetchModerationCounts"]>
+    >(() =>
+      Promise.resolve({ all: 0, pending_review: 0, published: 0, hidden: 0 }),
+    ),
+    moderateComment: vi.fn<
+      NonNullable<CommentBackendAdapter["moderateComment"]>
+    >(() => Promise.resolve()),
+    pinComment: vi.fn<NonNullable<CommentBackendAdapter["pinComment"]>>(() =>
+      Promise.resolve(),
+    ),
+    banUser: vi.fn<NonNullable<CommentBackendAdapter["banUser"]>>(() =>
+      Promise.resolve(),
+    ),
+    unbanUser: vi.fn<NonNullable<CommentBackendAdapter["unbanUser"]>>(() =>
+      Promise.resolve(),
+    ),
   } satisfies CommentBackendAdapter;
 }
 

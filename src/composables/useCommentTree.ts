@@ -317,6 +317,36 @@ export function useCommentTree(
     }
   }
 
+  async function pinComment(id: string, pinned: boolean): Promise<boolean> {
+    if (!adapter.pinComment) return false;
+    error.value = null;
+    try {
+      await adapter.pinComment(id, pinned);
+      await refresh();
+      return true;
+    } catch (err) {
+      error.value = report("pinComment", err);
+      return false;
+    }
+  }
+
+  async function moderateComment(
+    commentIds: string[],
+    action: "publish" | "hide",
+    reason?: string,
+  ): Promise<boolean> {
+    if (!adapter.moderateComment) return false;
+    error.value = null;
+    try {
+      await adapter.moderateComment(commentIds, action, reason);
+      await refresh();
+      return true;
+    } catch (err) {
+      error.value = report("moderateComment", err);
+      return false;
+    }
+  }
+
   function reset() {
     resetCount++;
     latestRequestId++;
@@ -357,6 +387,8 @@ export function useCommentTree(
     voteComment,
     updateComment,
     deleteComment,
+    pinComment,
+    moderateComment,
     reset,
   };
 }

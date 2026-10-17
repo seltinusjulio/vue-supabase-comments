@@ -17,6 +17,7 @@ export {
 } from "./utils/tree";
 export { default as CommentAvatarFallback } from "./components/CommentAvatarFallback.vue";
 export { default as CommentForm } from "./components/CommentForm.vue";
+export { default as CommentModerationTable } from "./components/CommentModerationTable.vue";
 export { default as CommentNode } from "./components/CommentNode.vue";
 export { default as CommentSection } from "./components/CommentSection.vue";
 export {

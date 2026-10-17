@@ -16,7 +16,12 @@ export interface CommentsModuleOptions {
   prefix: string;
 }
 
-const COMPONENTS = ["CommentSection", "CommentNode", "CommentForm"] as const;
+const COMPONENTS = [
+  "CommentSection",
+  "CommentNode",
+  "CommentForm",
+  "CommentModerationTable",
+] as const;
 
 /**
  * Optional Nuxt integration: registers the components, auto-imports the

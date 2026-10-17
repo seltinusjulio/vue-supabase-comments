@@ -48,6 +48,17 @@
       <path d="M18 6 6 18" />
       <path d="m6 6 12 12" />
     </template>
+    <polyline v-else-if="name === 'check'" points="20 6 9 17 4 12" />
+    <template v-else-if="name === 'pin'">
+      <line x1="12" y1="17" x2="12" y2="22" />
+      <path
+        d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a1 1 0 0 0 0-2H8a1 1 0 0 0 0 2h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"
+      />
+    </template>
+    <template v-else-if="name === 'search'">
+      <circle cx="11" cy="11" r="8" />
+      <line x1="21" y1="21" x2="16.65" y2="16.65" />
+    </template>
     <path
       v-else-if="name === 'alert'"
       d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"
@@ -61,11 +72,14 @@ export type CommentIconName =
   | "arrow-down"
   | "arrow-up"
   | "camera"
+  | "check"
   | "chevron-up"
   | "close"
   | "message"
   | "paperclip"
   | "pencil"
+  | "pin"
+  | "search"
   | "trash";
 
 defineProps<{ name: CommentIconName }>();

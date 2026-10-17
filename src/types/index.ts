@@ -46,6 +46,30 @@ export interface CommentItem {
   author: CommentAuthor | null;
 }
 
+/**
+ * A comment in the moderation queue, extending CommentItem.
+ * Unlike public comment items, this includes guest_email for authorized staff,
+ * and optional moderation state like is_banned.
+ */
+export interface CommentModerationItem extends CommentItem {
+  guest_email?: string | null;
+  is_banned?: boolean;
+}
+
+export interface ModerationQueueOptions {
+  status: CommentStatus | "all";
+  offset?: number;
+  limit?: number;
+  search?: string;
+}
+
+export interface ModerationQueueResult {
+  items: CommentModerationItem[];
+  totalCount?: number;
+  statusCounts?: Record<CommentStatus | "all", number>;
+  hasMore?: boolean;
+}
+
 /** A comment placed in the reply tree. */
 export interface CommentTreeNode extends CommentItem {
   children: CommentTreeNode[];
@@ -118,7 +142,10 @@ export interface CommentBackendAdapter {
   deleteComment(commentId: string): Promise<void>;
 
   // Moderation hooks, optional for hosts without an admin panel.
-  fetchModerationQueue?(status: CommentStatus | "all"): Promise<CommentItem[]>;
+  fetchModerationQueue?(
+    options?: ModerationQueueOptions | CommentStatus | "all",
+  ): Promise<CommentModerationItem[] | ModerationQueueResult>;
+  fetchModerationCounts?(): Promise<Record<CommentStatus | "all", number>>;
   moderateComment?(
     commentIds: string[],
     action: "publish" | "hide",
@@ -136,6 +163,7 @@ export interface CommentBackendAdapter {
     reason?: string;
     expiresAt?: string | null;
   }): Promise<void>;
+  unbanUser?(userId: string): Promise<void>;
 }
 
 /** All user-facing text of the module. Values that need data are functions. */
@@ -216,6 +244,63 @@ export interface CommentMessages {
     unexpected: string;
     signInRequired: string;
     guestInfoRequired: string;
+  };
+  moderation: {
+    title: string;
+    description: string;
+    filterAll: string;
+    filterPending: string;
+    filterPublished: string;
+    filterHidden: string;
+    statusPublished: string;
+    statusPending: string;
+    statusHidden: string;
+    statusBanned: string;
+    searchPlaceholder: string;
+    selectAll: string;
+    selectRow: (id: string) => string;
+    colStatus: string;
+    colContent: string;
+    colSender: string;
+    colDate: string;
+    colActions: string;
+    empty: string;
+    noSearchResults: string;
+    approve: string;
+    hide: string;
+    show: string;
+    ban: string;
+    unban: string;
+    pin: string;
+    unpin: string;
+    bulkApprove: string;
+    bulkHide: string;
+    selectedCount: (count: number) => string;
+    loadMore: string;
+    loadingMore: string;
+    loading: string;
+    banTitle: (name: string) => string;
+    banReasonLabel: string;
+    banReasonPlaceholder: string;
+    banDurationLabel: string;
+    banPresetWeek: string;
+    banPresetMonth: string;
+    banPresetThreeMonths: string;
+    banPresetPermanent: string;
+    banExpiresAt: (date: string) => string;
+    banPermanent: string;
+    banSubmit: string;
+    downloadAttachment: string;
+    photoAttachmentAlt: string;
+    anonymous: string;
+    successStatusUpdated: string;
+    errorStatusUpdate: string;
+    successBanned: string;
+    errorBan: string;
+    successUnbanned: string;
+    errorUnban: string;
+    targetSong: string;
+    targetArticle: string;
   };
 }
 
