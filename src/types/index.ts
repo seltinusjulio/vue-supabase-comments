@@ -257,6 +257,7 @@ export interface CommentMessages {
     statusHidden: string;
     statusBanned: string;
     searchPlaceholder: string;
+    clearSearch: string;
     selectAll: string;
     selectRow: (id: string) => string;
     colStatus: string;

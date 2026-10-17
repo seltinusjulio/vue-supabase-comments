@@ -97,6 +97,7 @@ export const en: CommentMessages = {
     statusHidden: "Hidden",
     statusBanned: "Banned",
     searchPlaceholder: "Search comments, author, or email...",
+    clearSearch: "Clear search",
     selectAll: "Select all rows",
     selectRow: (id) => `Select comment ${id}`,
     colStatus: "Status",

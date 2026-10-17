@@ -36,6 +36,12 @@
     --comment-danger-text: #991b1b;
     --comment-warning-bg: #fef3c7;
     --comment-warning-text: #92400e;
+    --comment-success: #16a34a;
+    --comment-success-hover: #15803d;
+    --comment-success-soft: rgb(34 197 94 / 0.1);
+    --comment-success-strong: #15803d;
+    --comment-success-bg: #dcfce7;
+    --comment-success-text: #166534;
   }
 
   .dark .comments-root,
@@ -63,6 +69,12 @@
     --comment-danger-text: #fca5a5;
     --comment-warning-bg: #452c03;
     --comment-warning-text: #fde047;
+    --comment-success: #22c55e;
+    --comment-success-hover: #16a34a;
+    --comment-success-soft: rgb(34 197 94 / 0.15);
+    --comment-success-strong: #4ade80;
+    --comment-success-bg: #14532d;
+    --comment-success-text: #86efac;
   }
 }
 
@@ -105,6 +117,13 @@
     background-color: var(--comment-danger-soft);
     color: var(--comment-danger-strong);
   }
+  .comments-root .cmt-action--success {
+    color: var(--comment-success);
+  }
+  .comments-root .cmt-action--success:hover {
+    background-color: var(--comment-success-soft);
+    color: var(--comment-success-strong);
+  }
 
   .comments-root .cmt-btn {
     display: inline-flex;
@@ -142,6 +161,20 @@
   }
   .comments-root .cmt-btn--danger:hover:not(:disabled) {
     background-color: var(--comment-danger-hover);
+  }
+  .comments-root .cmt-btn--success {
+    background-color: var(--comment-success);
+    color: #ffffff;
+  }
+  .comments-root .cmt-btn--success:hover:not(:disabled) {
+    background-color: var(--comment-success-hover);
+  }
+  .comments-root .cmt-btn--warning {
+    background-color: var(--comment-warning-bg);
+    color: var(--comment-warning-text);
+  }
+  .comments-root .cmt-btn--warning:hover:not(:disabled) {
+    opacity: 0.9;
   }
 
   .comments-root .cmt-action:focus-visible,

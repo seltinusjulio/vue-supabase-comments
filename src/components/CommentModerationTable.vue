@@ -58,7 +58,7 @@
           id="admin-moderation-search-clear"
           type="button"
           class="absolute top-1/2 right-2.5 -translate-y-1/2 text-(--comment-text-muted) hover:text-(--comment-text)"
-          aria-label="Clear search"
+          :aria-label="msg.moderation.clearSearch"
           @click="searchQuery = ''"
         >
           <CommentIcon name="close" class="h-4 w-4" />

@@ -105,7 +105,7 @@
             v-if="canModerate && isPending"
             :id="`comment-approve-button-${comment.id}`"
             type="button"
-            class="cmt-action text-emerald-600 hover:text-emerald-700 dark:text-emerald-400"
+            class="cmt-action cmt-action--success"
             :aria-label="msg.moderation.approve"
             :title="msg.moderation.approve"
             :disabled="isModerating"

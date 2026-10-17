@@ -97,6 +97,7 @@ export const id: CommentMessages = {
     statusHidden: "Tersembunyi",
     statusBanned: "Diblokir",
     searchPlaceholder: "Cari komentar, pengirim, atau email...",
+    clearSearch: "Hapus pencarian",
     selectAll: "Pilih semua baris",
     selectRow: (id) => `Pilih komentar ${id}`,
     colStatus: "Status",
