@@ -792,3 +792,88 @@ describe("CommentNode: thread layout", () => {
     );
   });
 });
+
+describe("CommentNode: moderation actions", () => {
+  it("allows moderator to quick-approve a pending comment", async () => {
+    const adapter = createFakeAdapter();
+    adapter.moderateComment = vi.fn().mockResolvedValue(undefined);
+    const { wrapper } = await mountSection({
+      adapter,
+      rows: [item("c1", { status: "pending_review" })],
+      viewer: { ...SIGNED_IN, canModerate: true },
+    });
+
+    const approveBtn = wrapper.find("#comment-approve-button-c1");
+    expect(approveBtn.exists()).toBe(true);
+
+    await approveBtn.trigger("click");
+    await flushPromises();
+
+    expect(adapter.moderateComment).toHaveBeenCalledWith(
+      ["c1"],
+      "publish",
+      undefined,
+    );
+    expect(wrapper.emitted("notify")).toContainEqual([
+      expect.objectContaining({ level: "success" }),
+    ]);
+  });
+
+  it("handles quick-approve errors gracefully", async () => {
+    const adapter = createFakeAdapter();
+    adapter.moderateComment = vi
+      .fn()
+      .mockRejectedValue(new Error("approve failed"));
+    const { wrapper } = await mountSection({
+      adapter,
+      rows: [item("c1", { status: "pending_review" })],
+      viewer: { ...SIGNED_IN, canModerate: true },
+    });
+
+    const approveBtn = wrapper.find("#comment-approve-button-c1");
+    await approveBtn.trigger("click");
+    await flushPromises();
+
+    expect(wrapper.emitted("notify")).toContainEqual([
+      expect.objectContaining({ level: "error" }),
+    ]);
+  });
+
+  it("allows moderator to pin and unpin a comment when pinning feature is enabled", async () => {
+    const adapter = createFakeAdapter();
+    adapter.pinComment = vi.fn().mockResolvedValue(undefined);
+    const { wrapper } = await mountSection({
+      adapter,
+      rows: [item("c1", { is_pinned: false })],
+      viewer: { ...SIGNED_IN, canModerate: true },
+      props: { enablePinning: true },
+    });
+
+    const pinBtn = wrapper.find("#comment-pin-button-c1");
+    expect(pinBtn.exists()).toBe(true);
+
+    await pinBtn.trigger("click");
+    await flushPromises();
+
+    expect(adapter.pinComment).toHaveBeenCalledWith("c1", true);
+  });
+
+  it("handles pin comment errors gracefully", async () => {
+    const adapter = createFakeAdapter();
+    adapter.pinComment = vi.fn().mockRejectedValue(new Error("pin failed"));
+    const { wrapper } = await mountSection({
+      adapter,
+      rows: [item("c1", { is_pinned: true })],
+      viewer: { ...SIGNED_IN, canModerate: true },
+      props: { enablePinning: true },
+    });
+
+    const pinBtn = wrapper.find("#comment-pin-button-c1");
+    await pinBtn.trigger("click");
+    await flushPromises();
+
+    expect(wrapper.emitted("notify")).toContainEqual([
+      expect.objectContaining({ level: "error" }),
+    ]);
+  });
+});

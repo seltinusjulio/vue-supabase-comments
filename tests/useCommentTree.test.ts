@@ -904,3 +904,69 @@ describe("useCommentTree: reset", () => {
     expect(adapter.fetchComments).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("useCommentTree: pinComment and moderateComment", () => {
+  it("pinComment returns false if adapter does not support pinning", async () => {
+    (adapter as Record<string, unknown>).pinComment = undefined;
+    const tree = setup();
+    const result = await tree.pinComment("c1", true);
+    expect(result).toBe(false);
+  });
+
+  it("pinComment delegates to adapter and refreshes on success", async () => {
+    adapter.pinComment = vi.fn().mockResolvedValue(undefined);
+    serve([item("c1")]);
+    const tree = setup();
+    await tree.load();
+
+    const result = await tree.pinComment("c1", true);
+    expect(result).toBe(true);
+    expect(adapter.pinComment).toHaveBeenCalledWith("c1", true);
+  });
+
+  it("pinComment catches errors and sets error.value", async () => {
+    adapter.pinComment = vi.fn().mockRejectedValue(new Error("pin failed"));
+    serve([item("c1")]);
+    const tree = setup();
+    await tree.load();
+
+    const result = await tree.pinComment("c1", true);
+    expect(result).toBe(false);
+    expect(tree.error.value).toBe("pin failed");
+  });
+
+  it("moderateComment returns false if adapter does not support moderation", async () => {
+    (adapter as Record<string, unknown>).moderateComment = undefined;
+    const tree = setup();
+    const result = await tree.moderateComment(["c1"], "publish");
+    expect(result).toBe(false);
+  });
+
+  it("moderateComment delegates to adapter and refreshes on success", async () => {
+    adapter.moderateComment = vi.fn().mockResolvedValue(undefined);
+    serve([item("c1")]);
+    const tree = setup();
+    await tree.load();
+
+    const result = await tree.moderateComment(["c1"], "publish", "approved");
+    expect(result).toBe(true);
+    expect(adapter.moderateComment).toHaveBeenCalledWith(
+      ["c1"],
+      "publish",
+      "approved",
+    );
+  });
+
+  it("moderateComment catches errors and sets error.value", async () => {
+    adapter.moderateComment = vi
+      .fn()
+      .mockRejectedValue(new Error("moderate failed"));
+    serve([item("c1")]);
+    const tree = setup();
+    await tree.load();
+
+    const result = await tree.moderateComment(["c1"], "hide");
+    expect(result).toBe(false);
+    expect(tree.error.value).toBe("moderate failed");
+  });
+});
