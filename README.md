@@ -199,7 +199,7 @@ export function createSupabaseCommentsAdapter(
     async countComments(target: CommentTarget): Promise<number> {
       const { count, error } = await supabase
         .from("comments")
-        .select("*", { count: "exact", head: true })
+        .select("id", { count: "exact", head: true })
         .eq("target_id", target.targetId)
         .eq("target_type", target.targetType)
         .eq("status", "published");
@@ -211,18 +211,31 @@ export function createSupabaseCommentsAdapter(
     async fetchUserVotes(
       target: CommentTarget,
     ): Promise<Record<string, "up" | "down">> {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return {};
+
       const { data, error } = await supabase
         .from("comment_votes")
-        .select("comment_id, vote_type");
+        .select("comment_id, vote_type")
+        .eq("user_id", user.id);
       if (error) throw error;
-      return Object.fromEntries(data.map((v) => [v.comment_id, v.vote_type]));
+      return Object.fromEntries(
+        (data ?? []).map((v) => [v.comment_id, v.vote_type as "up" | "down"]),
+      );
     },
 
     async submitComment(payload: SubmitCommentPayload): Promise<void> {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
       const { error } = await supabase.from("comments").insert({
         target_id: payload.targetId,
         target_type: payload.targetType,
-        parent_comment_id: payload.parentId ?? null,
+        parent_comment_id: payload.parentCommentId ?? null,
+        user_id: user?.id ?? null,
         content: payload.content,
         guest_name: payload.guestName,
         guest_email: payload.guestEmail,

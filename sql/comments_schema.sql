@@ -62,7 +62,7 @@ CREATE TABLE IF NOT EXISTS public.comments (
     target_type text NOT NULL,
     parent_comment_id uuid REFERENCES public.comments(id) ON DELETE SET NULL,
     path extensions.ltree,
-    user_id uuid REFERENCES auth.users(id) ON DELETE SET NULL,
+    user_id uuid DEFAULT auth.uid() REFERENCES auth.users(id) ON DELETE SET NULL,
     guest_name text,
     guest_email text,
     content text NOT NULL,
@@ -472,8 +472,8 @@ USING (public.is_comment_staff());
 -- Comment Votes RLS Policies
 DROP POLICY IF EXISTS "comment_votes_select_policy" ON public.comment_votes;
 CREATE POLICY "comment_votes_select_policy" ON public.comment_votes
-FOR SELECT TO anon, authenticated
-USING (true);
+FOR SELECT TO authenticated
+USING (user_id = auth.uid());
 
 DROP POLICY IF EXISTS "comment_votes_insert_policy" ON public.comment_votes;
 CREATE POLICY "comment_votes_insert_policy" ON public.comment_votes
