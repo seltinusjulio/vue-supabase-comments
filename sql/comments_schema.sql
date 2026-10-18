@@ -90,7 +90,7 @@ CREATE TABLE IF NOT EXISTS public.comments (
 -- B. comment_votes: tracks upvotes and downvotes per user
 CREATE TABLE IF NOT EXISTS public.comment_votes (
     comment_id uuid NOT NULL REFERENCES public.comments(id) ON DELETE CASCADE,
-    user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    user_id uuid DEFAULT auth.uid() NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
     vote_type text NOT NULL CHECK (vote_type IN ('up', 'down')),
     created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
     updated_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
@@ -233,6 +233,11 @@ DECLARE
     v_is_owner boolean := (OLD.user_id IS NOT NULL AND OLD.user_id = auth.uid());
     v_is_anon boolean;
 BEGIN
+    -- Allow internal trigger cascades (e.g. update_comment_vote_counts tally)
+    IF pg_trigger_depth() > 1 THEN
+        RETURN NEW;
+    END IF;
+
     -- Staff can update any column (moderation, pinning, status changes)
     IF v_is_staff THEN
         NEW.updated_at := timezone('utc'::text, now());
@@ -302,10 +307,11 @@ CREATE TRIGGER trigger_protect_comment_columns
 BEFORE UPDATE ON public.comments
 FOR EACH ROW EXECUTE FUNCTION public.protect_comment_columns();
 
--- E. Trigger: Update vote counts on comments when comment_votes changes
+-- E. Trigger: Update vote counts on comments when comment_votes changes (SECURITY DEFINER)
 CREATE OR REPLACE FUNCTION public.update_comment_vote_counts()
 RETURNS trigger
 LANGUAGE plpgsql
+SECURITY DEFINER
 SET search_path = public
 AS $$
 BEGIN
@@ -335,6 +341,8 @@ BEGIN
     RETURN NULL;
 END;
 $$;
+
+ALTER FUNCTION public.update_comment_vote_counts() OWNER TO postgres;
 
 DROP TRIGGER IF EXISTS trigger_update_comment_vote_counts ON public.comment_votes;
 CREATE TRIGGER trigger_update_comment_vote_counts

@@ -234,15 +234,21 @@ export function createSupabaseCommentsAdapter(
       commentId: string,
       vote: "up" | "down" | null,
     ): Promise<void> {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) throw new Error("Must be signed in to vote");
+
       if (vote === null) {
         await supabase
           .from("comment_votes")
           .delete()
-          .eq("comment_id", commentId);
+          .eq("comment_id", commentId)
+          .eq("user_id", user.id);
       } else {
         await supabase
           .from("comment_votes")
-          .upsert({ comment_id: commentId, vote_type: vote });
+          .upsert({ comment_id: commentId, user_id: user.id, vote_type: vote });
       }
     },
 
