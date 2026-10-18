@@ -193,7 +193,16 @@ export function createSupabaseCommentsAdapter(
         .order("path", { ascending: true });
 
       if (error) throw error;
-      return data ?? [];
+      return (data ?? []).map((row) => ({
+        ...row,
+        // Map author details or join with your application's user/profile table
+        author: row.user_id
+          ? {
+              id: row.user_id,
+              name: row.guest_name ?? "User",
+            }
+          : null,
+      }));
     },
 
     async countComments(target: CommentTarget): Promise<number> {
@@ -354,7 +363,7 @@ function handleNotification(notification: {
 | `viewer`            | `CommentViewer`            | `{ userId: null, isAnonymous: true }` | Reactive state of the current viewer.                  |
 | `allowGuests`       | `boolean`                  | `true`                                | Allow anonymous sessions to comment.                   |
 | `enableVoting`      | `boolean`                  | `true`                                | Enable upvote and downvote buttons.                    |
-| `enableAttachments` | `boolean`                  | `false`                               | Enable image and file attachments.                     |
+| `enableAttachments` | `boolean`                  | `true`                                | Enable image and file attachments.                     |
 | `enablePinning`     | `boolean`                  | `false`                               | Enable moderators to pin comments.                     |
 | `maxDepth`          | `number`                   | `3`                                   | Maximum indent depth before flattening nested replies. |
 | `maxLength`         | `number \| null`           | `null`                                | Character count limit for comment form.                |
@@ -383,7 +392,7 @@ function resolveTargetUrl(comment: { target_id: string; target_type: string }) {
 <template>
   <CommentModerationTable
     :adapter="commentsAdapter"
-    :target-url-resolver="resolveTargetUrl"
+    :target-url="resolveTargetUrl"
     :locale="'id'"
   />
 </template>

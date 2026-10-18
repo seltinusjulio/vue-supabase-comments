@@ -77,9 +77,12 @@ CREATE TABLE IF NOT EXISTS public.comments (
     created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
     updated_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
 
-    -- Authorship constraint: comment must have an authenticated user_id OR both guest_name & guest_email
+    -- Authorship constraint: comment must have an authenticated user_id OR both guest_name & guest_email.
+    -- Preserved comments whose authors were deleted via ON DELETE SET NULL are permitted.
     CONSTRAINT comments_author_check CHECK (
-        (user_id IS NOT NULL) OR ((guest_name IS NOT NULL) AND (guest_email IS NOT NULL))
+        (user_id IS NOT NULL)
+        OR ((guest_name IS NOT NULL) AND (guest_email IS NOT NULL))
+        OR (user_id IS NULL AND guest_name IS NULL AND guest_email IS NULL)
     ),
     -- Content length constraint (adjust upper bound as needed by host application)
     CONSTRAINT comments_content_length_check CHECK (
@@ -129,7 +132,7 @@ CREATE INDEX IF NOT EXISTS idx_comment_bans_user ON public.comment_bans (user_id
 CREATE OR REPLACE FUNCTION public.set_comment_path()
 RETURNS trigger
 LANGUAGE plpgsql
-SET search_path = public
+SET search_path = public, extensions
 AS $$
 DECLARE
     parent_path extensions.ltree;
@@ -226,7 +229,7 @@ FOR EACH ROW EXECUTE FUNCTION public.set_comment_insert_defaults();
 CREATE OR REPLACE FUNCTION public.protect_comment_columns()
 RETURNS trigger
 LANGUAGE plpgsql
-SET search_path = public
+SET search_path = public, extensions
 AS $$
 DECLARE
     v_is_staff boolean := public.is_comment_staff();
