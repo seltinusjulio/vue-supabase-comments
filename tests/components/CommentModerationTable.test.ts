@@ -202,10 +202,18 @@ describe("CommentModerationTable", () => {
     await wrapper.find("#comment-ban-button-c1").trigger("click");
     expect(wrapper.find("#admin-moderation-ban-dialog").exists()).toBe(true);
 
+    // Verify label wraps textarea for a11y, but uppercase is isolated to the span
+    const label = wrapper.find("label[for='admin-moderation-ban-reason']");
+    expect(label.exists()).toBe(true);
+    expect(label.classes()).not.toContain("uppercase");
+    expect(label.find("span").classes()).toContain("uppercase");
+
+    const textarea = wrapper.find("#admin-moderation-ban-reason");
+    expect(textarea.classes()).toContain("normal-case");
+    expect(textarea.classes()).toContain("tracking-normal");
+
     // Fill reason
-    await wrapper
-      .find("#admin-moderation-ban-reason")
-      .setValue("Spam berulang");
+    await textarea.setValue("Spam berulang");
     // Select preset 1 Minggu
     await wrapper.find("#admin-moderation-ban-preset-week").trigger("click");
 
@@ -278,6 +286,7 @@ describe("CommentModerationTable", () => {
 
     const link = wrapper.find("#comment-target-c1 a");
     expect(link.exists()).toBe(true);
+    expect(link.attributes("id")).toBe("comment-target-link-c1");
     expect(link.attributes("href")).toBe("/songs/lagu-123");
     expect(link.text()).toBe("Lagu");
   });

@@ -310,6 +310,7 @@
                 <slot name="target-link" :comment="comment">
                   <a
                     v-if="resolveTargetUrl(comment)"
+                    :id="`comment-target-link-${comment.id}`"
                     :href="resolveTargetUrl(comment)"
                     class="hover:underline"
                   >
@@ -487,16 +488,17 @@
 
       <div class="space-y-4 p-6">
         <div>
-          <label
-            for="admin-moderation-ban-reason"
-            class="mb-1 block text-xs font-medium tracking-wider text-(--comment-text-muted) uppercase"
-          >
-            {{ msg.moderation.banReasonLabel }}
+          <label for="admin-moderation-ban-reason" class="block">
+            <span
+              class="mb-1 block text-xs font-medium tracking-wider text-(--comment-text-muted) uppercase"
+            >
+              {{ msg.moderation.banReasonLabel }}
+            </span>
             <textarea
               id="admin-moderation-ban-reason"
               v-model="banReason"
               rows="3"
-              class="cmt-input mt-1"
+              class="cmt-input mt-1 tracking-normal normal-case"
               :placeholder="msg.moderation.banReasonPlaceholder"
             />
           </label>

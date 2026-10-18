@@ -192,6 +192,7 @@
     padding: 0.375rem 0.75rem;
     background-color: var(--comment-bg);
     color: var(--comment-text);
+    text-transform: none;
     box-shadow:
       0 0 0 1px var(--comment-input-ring),
       0 1px 2px 0 rgb(0 0 0 / 0.05);
