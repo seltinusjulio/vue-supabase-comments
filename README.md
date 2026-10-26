@@ -288,6 +288,15 @@ export function createSupabaseCommentsAdapter(
       });
       if (error) throw error;
     },
+
+    /** Optional: permanently deletes a comment from the database (for admin hard delete). */
+    async hardDeleteComment(commentId: string): Promise<void> {
+      const { error } = await supabase
+        .from("comments")
+        .delete()
+        .eq("id", commentId);
+      if (error) throw error;
+    },
   };
 }
 ```
@@ -393,10 +402,33 @@ function resolveTargetUrl(comment: { target_id: string; target_type: string }) {
   <CommentModerationTable
     :adapter="commentsAdapter"
     :target-url="resolveTargetUrl"
+    :can-hard-delete="isAdmin"
     :locale="'id'"
   />
 </template>
 ```
+
+#### Props
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `adapter` | `CommentBackendAdapter` | **Required** | Backend adapter instance. |
+| `canHardDelete` | `boolean` | `true` | Show the "Delete Permanently" action button with confirmation dialog (requires `adapter.hardDeleteComment`). Useful for restricting permanent deletes to administrators only. |
+| `enablePinning` | `boolean` | `false` | Enable pinning comments to the top of threads. |
+| `pageSize` | `number` | `20` | Items per page / batch when loading moderation queues. |
+| `dateLocale` | `string` | `'id-ID'` | BCP 47 language tag for timestamp rendering. |
+| `timeZone` | `string` | `'Asia/Jakarta'` | Timezone identifier for timestamp rendering. |
+| `targetUrl` | `(comment: CommentModerationItem) => string \| undefined` | `undefined` | Resolves entity URL for each row's target link. |
+| `targetLabel` | `(comment: CommentModerationItem) => string \| undefined` | `undefined` | Resolves entity label (e.g. "Song", "Article"). |
+| `locale` | `'id' \| 'en'` | `'id'` | Built-in UI locale for moderation messages and dialogs. |
+| `messages` | `Partial<CommentMessages>` | `undefined` | Custom dictionary overrides for labels and modal text. |
+
+#### Slots
+
+- `#custom-actions="{ comment }"`: Injects custom action buttons alongside approve/hide/ban/delete.
+- `#target-link="{ comment }"`: Custom target rendering.
+- `#sender="{ comment }"`: Custom sender cell rendering.
+- `#empty`: Custom empty state when no comments match the active filter.
 
 ---
 
