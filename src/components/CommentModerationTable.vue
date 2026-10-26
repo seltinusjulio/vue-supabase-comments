@@ -612,7 +612,10 @@
       </div>
 
       <div class="space-y-4 p-6">
-        <p id="admin-moderation-delete-dialog-text" class="text-sm text-(--comment-text)">
+        <p
+          id="admin-moderation-delete-dialog-text"
+          class="text-sm text-(--comment-text)"
+        >
           {{ msg.moderation.deleteConfirmMessage }}
         </p>
 

@@ -346,7 +346,9 @@ describe("CommentModerationTable", () => {
 
     expect(adapter.hardDeleteComment).toHaveBeenCalledWith("c1");
     expect(wrapper.find("#comment-row-c1").exists()).toBe(false);
-    expect(wrapper.find("#admin-moderation-delete-dialog").exists()).toBe(false);
+    expect(wrapper.find("#admin-moderation-delete-dialog").exists()).toBe(
+      false,
+    );
     const notifications = wrapper.emitted("notify");
     expect(notifications).toBeTruthy();
     expect(notifications?.[0]?.[0]).toEqual({
@@ -360,7 +362,9 @@ describe("CommentModerationTable", () => {
     adapter.fetchModerationQueue.mockResolvedValueOnce([
       modItem("c1", { content: "Error delete target" }),
     ]);
-    adapter.hardDeleteComment.mockRejectedValueOnce(new Error("Database error"));
+    adapter.hardDeleteComment.mockRejectedValueOnce(
+      new Error("Database error"),
+    );
 
     const wrapper = mount(CommentModerationTable, {
       props: { adapter, canHardDelete: true },
