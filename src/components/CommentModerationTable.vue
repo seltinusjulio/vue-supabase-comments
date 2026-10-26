@@ -438,6 +438,18 @@
                   </button>
                 </template>
 
+                <!-- Delete Permanently -->
+                <button
+                  v-if="adapter.hardDeleteComment && canHardDelete"
+                  :id="`comment-delete-button-${comment.id}`"
+                  type="button"
+                  class="cmt-btn cmt-btn--danger text-xs"
+                  :disabled="actionLoadingId === comment.id"
+                  @click="openDeleteDialog(comment)"
+                >
+                  {{ msg.moderation.deletePermanently }}
+                </button>
+
                 <slot name="custom-actions" :comment="comment" />
               </div>
             </td>
@@ -581,6 +593,73 @@
         </button>
       </div>
     </CommentDialog>
+
+    <!-- Hard Delete Modal Dialog -->
+    <CommentDialog
+      v-if="isDeleteDialogOpen && deleteTarget"
+      id="admin-moderation-delete-dialog"
+      :open="isDeleteDialogOpen"
+      labelledby="admin-moderation-delete-dialog-title"
+      @close="closeDeleteDialog"
+    >
+      <div class="border-b border-(--comment-border) p-4">
+        <h2
+          id="admin-moderation-delete-dialog-title"
+          class="text-lg font-bold text-(--comment-heading)"
+        >
+          {{ msg.moderation.deleteConfirmTitle }}
+        </h2>
+      </div>
+
+      <div class="space-y-4 p-6">
+        <p id="admin-moderation-delete-dialog-text" class="text-sm text-(--comment-text)">
+          {{ msg.moderation.deleteConfirmMessage }}
+        </p>
+
+        <div
+          v-if="deleteTarget.content"
+          id="admin-moderation-delete-target-preview"
+          class="rounded-md border border-(--comment-border) bg-(--comment-surface) p-3 text-xs text-(--comment-text-muted) italic"
+        >
+          "{{ deleteTarget.content }}"
+        </div>
+
+        <CommentAlert
+          v-if="deleteError"
+          id="admin-moderation-delete-error"
+          type="error"
+        >
+          {{ deleteError }}
+        </CommentAlert>
+      </div>
+
+      <div
+        class="flex justify-end gap-3 border-t border-(--comment-border) p-4"
+      >
+        <button
+          id="admin-moderation-delete-cancel"
+          type="button"
+          class="cmt-btn cmt-btn--secondary"
+          :disabled="isDeleteSubmitting"
+          @click="closeDeleteDialog"
+        >
+          {{ msg.common.cancel }}
+        </button>
+        <button
+          id="admin-moderation-delete-submit"
+          type="button"
+          class="cmt-btn cmt-btn--danger"
+          :disabled="isDeleteSubmitting"
+          @click="submitDelete"
+        >
+          <span
+            v-if="isDeleteSubmitting"
+            class="mr-1 inline-block h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent"
+          />
+          {{ msg.moderation.deleteSubmit }}
+        </button>
+      </div>
+    </CommentDialog>
   </div>
 </template>
 
@@ -620,6 +699,7 @@ const props = withDefaults(
     transformImageUrl?: (url: string, opts: { width: number }) => string;
     targetUrl?: (comment: CommentModerationItem) => string | undefined;
     targetLabel?: (comment: CommentModerationItem) => string | undefined;
+    canHardDelete?: boolean;
   }>(),
   {
     locale: "id",
@@ -631,6 +711,7 @@ const props = withDefaults(
     transformImageUrl: undefined,
     targetUrl: undefined,
     targetLabel: undefined,
+    canHardDelete: true,
   },
 );
 
@@ -668,6 +749,12 @@ const banSelectedPreset = ref("permanent");
 const banExpiresAt = ref<string | null>(null);
 const isBanSubmitting = ref(false);
 const banError = ref<string | null>(null);
+
+// Hard delete dialog state
+const isDeleteDialogOpen = ref(false);
+const deleteTarget = ref<CommentModerationItem | null>(null);
+const isDeleteSubmitting = ref(false);
+const deleteError = ref<string | null>(null);
 
 const durationPresets = computed(() => [
   { id: "week", label: msg.value.moderation.banPresetWeek, days: 7 },
@@ -1021,6 +1108,40 @@ const handleUnban = async (comment: CommentModerationItem) => {
     });
   } finally {
     actionLoadingId.value = null;
+  }
+};
+
+const openDeleteDialog = (comment: CommentModerationItem) => {
+  deleteTarget.value = comment;
+  deleteError.value = null;
+  isDeleteDialogOpen.value = true;
+};
+
+const closeDeleteDialog = () => {
+  isDeleteDialogOpen.value = false;
+  deleteTarget.value = null;
+  deleteError.value = null;
+};
+
+const submitDelete = async () => {
+  if (!props.adapter.hardDeleteComment || !deleteTarget.value) return;
+  isDeleteSubmitting.value = true;
+  deleteError.value = null;
+  const targetId = deleteTarget.value.id;
+  try {
+    await props.adapter.hardDeleteComment(targetId);
+    emit("notify", {
+      level: "success",
+      message: msg.value.moderation.successDeleted,
+    });
+    comments.value = comments.value.filter((c) => c.id !== targetId);
+    selectedIds.value.delete(targetId);
+    void loadCounts();
+    closeDeleteDialog();
+  } catch (err) {
+    deleteError.value = getErrorMessage(err, msg.value.moderation.errorDelete);
+  } finally {
+    isDeleteSubmitting.value = false;
   }
 };
 

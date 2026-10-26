@@ -290,4 +290,93 @@ describe("CommentModerationTable", () => {
     expect(link.attributes("href")).toBe("/songs/lagu-123");
     expect(link.text()).toBe("Lagu");
   });
+
+  it("renders hard-delete button when adapter supports it and canHardDelete is true", async () => {
+    const adapter = createFakeAdapter();
+    adapter.fetchModerationQueue.mockResolvedValueOnce([
+      modItem("c1", { content: "Spam comment" }),
+    ]);
+
+    const wrapper = mount(CommentModerationTable, {
+      props: { adapter, canHardDelete: true },
+    });
+    await flushPromises();
+
+    expect(wrapper.find("#comment-delete-button-c1").exists()).toBe(true);
+  });
+
+  it("hides hard-delete button when canHardDelete is false", async () => {
+    const adapter = createFakeAdapter();
+    adapter.fetchModerationQueue.mockResolvedValueOnce([
+      modItem("c1", { content: "Spam comment" }),
+    ]);
+
+    const wrapper = mount(CommentModerationTable, {
+      props: { adapter, canHardDelete: false },
+    });
+    await flushPromises();
+
+    expect(wrapper.find("#comment-delete-button-c1").exists()).toBe(false);
+  });
+
+  it("opens delete dialog and permanently deletes comment on confirmation", async () => {
+    const adapter = createFakeAdapter();
+    adapter.fetchModerationQueue.mockResolvedValueOnce([
+      modItem("c1", { content: "Komentar yang akan dihapus" }),
+    ]);
+    adapter.hardDeleteComment.mockResolvedValueOnce(undefined);
+
+    const wrapper = mount(CommentModerationTable, {
+      props: { adapter, canHardDelete: true },
+    });
+    await flushPromises();
+
+    // Click delete button to open dialog
+    await wrapper.find("#comment-delete-button-c1").trigger("click");
+    await flushPromises();
+
+    expect(wrapper.find("#admin-moderation-delete-dialog").exists()).toBe(true);
+    expect(
+      wrapper.find("#admin-moderation-delete-target-preview").text(),
+    ).toContain("Komentar yang akan dihapus");
+
+    // Click confirm delete submit
+    await wrapper.find("#admin-moderation-delete-submit").trigger("click");
+    await flushPromises();
+
+    expect(adapter.hardDeleteComment).toHaveBeenCalledWith("c1");
+    expect(wrapper.find("#comment-row-c1").exists()).toBe(false);
+    expect(wrapper.find("#admin-moderation-delete-dialog").exists()).toBe(false);
+    const notifications = wrapper.emitted("notify");
+    expect(notifications).toBeTruthy();
+    expect(notifications?.[0]?.[0]).toEqual({
+      level: "success",
+      message: "Komentar berhasil dihapus secara permanen.",
+    });
+  });
+
+  it("displays error in dialog if hard delete fails", async () => {
+    const adapter = createFakeAdapter();
+    adapter.fetchModerationQueue.mockResolvedValueOnce([
+      modItem("c1", { content: "Error delete target" }),
+    ]);
+    adapter.hardDeleteComment.mockRejectedValueOnce(new Error("Database error"));
+
+    const wrapper = mount(CommentModerationTable, {
+      props: { adapter, canHardDelete: true },
+    });
+    await flushPromises();
+
+    await wrapper.find("#comment-delete-button-c1").trigger("click");
+    await flushPromises();
+
+    await wrapper.find("#admin-moderation-delete-submit").trigger("click");
+    await flushPromises();
+
+    expect(adapter.hardDeleteComment).toHaveBeenCalledWith("c1");
+    expect(wrapper.find("#comment-row-c1").exists()).toBe(true);
+    expect(wrapper.find("#admin-moderation-delete-error").text()).toContain(
+      "Database error",
+    );
+  });
 });

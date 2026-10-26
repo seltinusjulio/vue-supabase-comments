@@ -142,5 +142,12 @@ export const en: CommentMessages = {
     errorUnban: "Failed to unban user.",
     targetSong: "Song",
     targetArticle: "Article",
+    deletePermanently: "Delete Permanently",
+    deleteConfirmTitle: "Delete Comment Permanently",
+    deleteConfirmMessage:
+      "Are you sure you want to permanently delete this comment? This action cannot be undone.",
+    deleteSubmit: "Delete Permanently",
+    successDeleted: "Comment permanently deleted successfully.",
+    errorDelete: "Failed to permanently delete comment.",
   },
 };

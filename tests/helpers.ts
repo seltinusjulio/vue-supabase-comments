@@ -82,6 +82,9 @@ export function createFakeAdapter() {
     deleteComment: vi.fn<CommentBackendAdapter["deleteComment"]>(() =>
       Promise.resolve(),
     ),
+    hardDeleteComment: vi.fn<
+      NonNullable<CommentBackendAdapter["hardDeleteComment"]>
+    >(() => Promise.resolve()),
     fetchModerationQueue: vi.fn<
       NonNullable<CommentBackendAdapter["fetchModerationQueue"]>
     >(() => Promise.resolve([])),

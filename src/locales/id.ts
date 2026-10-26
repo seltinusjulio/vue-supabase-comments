@@ -142,5 +142,12 @@ export const id: CommentMessages = {
     errorUnban: "Gagal membatalkan blokir pengguna.",
     targetSong: "Lagu",
     targetArticle: "Artikel",
+    deletePermanently: "Hapus Permanen",
+    deleteConfirmTitle: "Hapus Komentar Permanen",
+    deleteConfirmMessage:
+      "Apakah Anda yakin ingin menghapus komentar ini secara permanen? Tindakan ini tidak dapat dibatalkan.",
+    deleteSubmit: "Hapus Permanen",
+    successDeleted: "Komentar berhasil dihapus secara permanen.",
+    errorDelete: "Gagal menghapus komentar secara permanen.",
   },
 };

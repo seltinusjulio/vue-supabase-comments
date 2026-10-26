@@ -140,6 +140,8 @@ export interface CommentBackendAdapter {
   updateComment(commentId: string, content: string): Promise<void>;
   /** Hides the viewer's own comment. */
   deleteComment(commentId: string): Promise<void>;
+  /** Permanently deletes a comment from the database. */
+  hardDeleteComment?(commentId: string): Promise<void>;
 
   // Moderation hooks, optional for hosts without an admin panel.
   fetchModerationQueue?(
@@ -302,6 +304,12 @@ export interface CommentMessages {
     errorUnban: string;
     targetSong: string;
     targetArticle: string;
+    deletePermanently: string;
+    deleteConfirmTitle: string;
+    deleteConfirmMessage: string;
+    deleteSubmit: string;
+    successDeleted: string;
+    errorDelete: string;
   };
 }
 
