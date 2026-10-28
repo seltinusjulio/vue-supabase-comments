@@ -12,7 +12,6 @@ export const id: CommentMessages = {
     emptyTitle: "Belum ada komentar",
     emptyHint: "Jadilah yang pertama berkomentar.",
     sortLabel: "Urutkan:",
-    sortButton: "Urutkan",
     sortGroupLabel: "Urutkan komentar",
     sort: {
       newest: "Terbaru",

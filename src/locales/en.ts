@@ -12,7 +12,6 @@ export const en: CommentMessages = {
     emptyTitle: "No comments yet",
     emptyHint: "Be the first to comment.",
     sortLabel: "Sort by:",
-    sortButton: "Sort",
     sortGroupLabel: "Sort comments",
     sort: {
       newest: "Newest",

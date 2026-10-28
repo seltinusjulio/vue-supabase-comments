@@ -21,10 +21,14 @@
           class="cmt-action"
           aria-haspopup="true"
           :aria-expanded="isSortMenuOpen"
-          :aria-label="msg.section.sortGroupLabel"
           @click="toggleSortMenu"
         >
-          <span>{{ msg.section.sortButton }}</span>
+          <span
+            >{{ msg.section.sortLabel }}
+            <span class="text-(--comment-text)">{{
+              msg.section.sort[sortOrder]
+            }}</span></span
+          >
           <CommentIcon
             name="chevron-up"
             class="h-4 w-4 transition-transform"

@@ -144,6 +144,7 @@ describe("CommentSection", () => {
       it("opens from one Urutkan button and lists the three orders", async () => {
         const { wrapper } = await mountSection({ rows });
         const button = wrapper.find("#comment-section-sort-menu-button");
+        expect(button.text()).toBe("Urutkan: Terlama");
         expect(button.attributes("aria-expanded")).toBe("false");
         expect(wrapper.find("#comment-section-sort-menu").exists()).toBe(false);
 
@@ -173,6 +174,9 @@ describe("CommentSection", () => {
           .trigger("click");
 
         expect(wrapper.find("#comment-section-sort-menu").exists()).toBe(false);
+        expect(wrapper.find("#comment-section-sort-menu-button").text()).toBe(
+          "Urutkan: Terpopuler",
+        );
         expect(
           wrapper
             .findAll("#comment-section-list > [id^='comment-node-']")
