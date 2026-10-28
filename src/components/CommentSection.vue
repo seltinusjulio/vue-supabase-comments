@@ -111,6 +111,7 @@ import {
   onBeforeUnmount,
   onMounted,
   provide,
+  reactive,
   ref,
   useSlots,
 } from "vue";
@@ -238,7 +239,11 @@ const sortOptions: readonly CommentSortOrder[] = [
 const msg = messages;
 
 const activeReplyId = ref<string | null>(null);
-const replyDrafts = new Map<string, ReplyDraft>();
+// Cast: reactive() would otherwise unwrap the File fields into a lookalike type.
+const replyDrafts = reactive(new Map<string, ReplyDraft>()) as Map<
+  string,
+  ReplyDraft
+>;
 
 const now = ref(new Date());
 let clock: ReturnType<typeof setInterval> | undefined;

@@ -48,6 +48,8 @@ export const en: CommentMessages = {
     edited: "(edited)",
     pending: "Awaiting moderation",
     pinned: "Pinned",
+    draft: "Draft",
+    draftTitle: "You have an unsent reply",
     deletedForPublic: "Deleted, hidden from the public",
     edit: "Edit",
     editLabel: "Edit comment",

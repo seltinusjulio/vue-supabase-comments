@@ -47,6 +47,8 @@ export const id: CommentMessages = {
     edited: "(diedit)",
     pending: "Menunggu moderasi",
     pinned: "Disematkan",
+    draft: "Draf",
+    draftTitle: "Ada balasan yang belum terkirim",
     deletedForPublic: "Dihapus, tidak tampil untuk publik",
     edit: "Sunting",
     editLabel: "Sunting komentar",

@@ -363,6 +363,13 @@
             >
               <CommentIcon name="message" class="h-4 w-4" />
               <span>{{ msg.common.reply }}</span>
+              <span
+                v-if="hasReplyDraft"
+                :id="`comment-reply-draft-${comment.id}`"
+                :title="msg.node.draftTitle"
+                class="text-xs font-normal text-(--comment-primary) italic"
+                >· {{ msg.node.draft }}</span
+              >
             </button>
 
             <template v-if="features.voting">
@@ -529,6 +536,10 @@ const threadIndentClass = computed(() =>
 // Only one reply form is open at a time: it is whichever the section says.
 // Closing one by opening another keeps its draft; Batal discards it.
 const isReplying = computed(() => ctx.activeReplyId.value === props.comment.id);
+// A closed reply form that still holds unsent text gets a marker.
+const hasReplyDraft = computed(
+  () => !isReplying.value && ctx.replyDrafts.has(props.comment.id),
+);
 const toggleReply = () => {
   ctx.activeReplyId.value = isReplying.value ? null : props.comment.id;
 };

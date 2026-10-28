@@ -769,6 +769,42 @@ describe("CommentNode: replying", () => {
       ).toBe("");
     });
 
+    it("marks a closed reply form that still holds a draft", async () => {
+      const { wrapper } = await mountTwo();
+      const reply = open(wrapper);
+
+      expect(wrapper.find("#comment-reply-draft-c1").exists()).toBe(false);
+
+      await reply("c1");
+      expect(wrapper.find("#comment-reply-draft-c1").exists()).toBe(false);
+
+      await wrapper.find("#comment-content-c1").setValue("Nanti dulu");
+      expect(wrapper.find("#comment-reply-draft-c1").exists()).toBe(false);
+
+      await reply("c2");
+      expect(wrapper.find("#comment-reply-draft-c1").text()).toBe("· Draf");
+      expect(wrapper.find("#comment-reply-draft-c2").exists()).toBe(false);
+
+      await reply("c1");
+      expect(wrapper.find("#comment-reply-draft-c1").exists()).toBe(false);
+    });
+
+    it("does not mark a comment whose draft was discarded or posted", async () => {
+      const { wrapper } = await mountTwo();
+      const reply = open(wrapper);
+
+      await reply("c1");
+      await wrapper.find("#comment-content-c1").setValue("Buang");
+      await wrapper.find("#comment-form-cancel-button-c1").trigger("click");
+      expect(wrapper.find("#comment-reply-draft-c1").exists()).toBe(false);
+
+      await reply("c2");
+      await wrapper.find("#comment-content-c2").setValue("Kirim");
+      await wrapper.find("#comment-form-c2").trigger("submit");
+      await flushPromises();
+      expect(wrapper.find("#comment-reply-draft-c2").exists()).toBe(false);
+    });
+
     it("does not carry a draft from one comment to another", async () => {
       const { wrapper } = await mountTwo();
       const reply = open(wrapper);

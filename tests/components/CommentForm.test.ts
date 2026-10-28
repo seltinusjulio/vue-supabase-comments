@@ -76,6 +76,42 @@ describe("CommentForm: top-level form", () => {
     expect(wrapper.find("#comment-form-submit-button").exists()).toBe(true);
   });
 
+  it("shows Batal once expanded, and it discards the draft and collapses", async () => {
+    const { wrapper } = await mountSection({ viewer: SIGNED_IN });
+    await textarea(wrapper).trigger("focus");
+
+    const cancel = wrapper.find("#comment-form-cancel-button");
+    expect(cancel.text()).toBe("Batal");
+    expect(
+      wrapper
+        .findAll("#comment-form-buttons-group button")
+        .map((b) => b.text()),
+    ).toEqual(["Batal", "Kirim Komentar"]);
+
+    await textarea(wrapper).setValue("Tidak jadi");
+    await cancel.trigger("click");
+
+    expect((textarea(wrapper).element as HTMLTextAreaElement).value).toBe("");
+    expect(textarea(wrapper).attributes("rows")).toBe("2");
+    expect(wrapper.find("#comment-form-actions-container").exists()).toBe(
+      false,
+    );
+  });
+
+  it("discards a picked photo and file when Batal is pressed", async () => {
+    const { wrapper } = await mountSection({ viewer: SIGNED_IN });
+    await textarea(wrapper).trigger("focus");
+    const file = new File(["x"], "doc.pdf", { type: "application/pdf" });
+    const input = wrapper.find("#comment-file-input");
+    Object.defineProperty(input.element, "files", { value: [file] });
+    await input.trigger("change");
+    expect(wrapper.find("#comment-form-file-name").exists()).toBe(true);
+
+    await wrapper.find("#comment-form-cancel-button").trigger("click");
+
+    expect(wrapper.find("#comment-form-file-name").exists()).toBe(false);
+  });
+
   it("submits for a signed-in user with attachments and collapses again", async () => {
     const { wrapper, adapter } = await mountSection({ viewer: SIGNED_IN });
     await textarea(wrapper).setValue("Amin");

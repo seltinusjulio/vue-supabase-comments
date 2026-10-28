@@ -233,11 +233,11 @@
           class="flex items-center gap-2"
         >
           <button
-            v-if="parentCommentId"
             :id="fid('comment-form-cancel-button')"
             type="button"
             class="cmt-btn cmt-btn--secondary"
-            @click="emit('cancel')"
+            :disabled="isSubmitting"
+            @click="handleCancel"
           >
             {{ msg.common.cancel }}
           </button>
@@ -415,6 +415,24 @@ const onFilePick = (e: Event) => {
 onUnmounted(() => {
   if (imagePreviewUrl.value) URL.revokeObjectURL(imagePreviewUrl.value);
 });
+
+// A reply form asks its comment to close; the top-level form has no parent to
+// do that, so it discards its draft and collapses back to the compact box.
+const handleCancel = () => {
+  if (props.parentCommentId) {
+    emit("cancel");
+    return;
+  }
+  content.value = "";
+  guestName.value = "";
+  guestEmail.value = "";
+  submitError.value = null;
+  showModerationMessage.value = false;
+  removeImage();
+  removeFile();
+  expanded.value = false;
+  contentRef.value?.blur();
+};
 
 const handleSubmit = async () => {
   isSubmitting.value = true;
