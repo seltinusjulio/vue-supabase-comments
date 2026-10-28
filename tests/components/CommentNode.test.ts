@@ -807,40 +807,44 @@ describe("CommentNode: replying", () => {
       ).toBe("");
     });
 
-    it("marks a closed reply form that still holds a draft", async () => {
+    it("reads Lanjutkan balasan on a closed reply form that still holds a draft", async () => {
       const { wrapper } = await mountTwo();
       const reply = open(wrapper);
+      const label = (id: string) =>
+        wrapper.find(`#comment-reply-button-${id}`).text();
 
-      expect(wrapper.find("#comment-reply-draft-c1").exists()).toBe(false);
+      expect(label("c1")).toBe("Balas");
 
       await reply("c1");
-      expect(wrapper.find("#comment-reply-draft-c1").exists()).toBe(false);
+      expect(label("c1")).toBe("Balas");
 
       await wrapper.find("#comment-content-c1").setValue("Nanti dulu");
-      expect(wrapper.find("#comment-reply-draft-c1").exists()).toBe(false);
+      expect(label("c1")).toBe("Balas");
 
       await reply("c2");
-      expect(wrapper.find("#comment-reply-draft-c1").text()).toBe("· Draf");
-      expect(wrapper.find("#comment-reply-draft-c2").exists()).toBe(false);
+      expect(label("c1")).toBe("Lanjutkan balasan");
+      expect(label("c2")).toBe("Balas");
 
       await reply("c1");
-      expect(wrapper.find("#comment-reply-draft-c1").exists()).toBe(false);
+      expect(label("c1")).toBe("Balas");
     });
 
-    it("does not mark a comment whose draft was discarded or posted", async () => {
+    it("goes back to Balas once a draft is discarded or posted", async () => {
       const { wrapper } = await mountTwo();
       const reply = open(wrapper);
+      const label = (id: string) =>
+        wrapper.find(`#comment-reply-button-${id}`).text();
 
       await reply("c1");
       await wrapper.find("#comment-content-c1").setValue("Buang");
       await wrapper.find("#comment-form-cancel-button-c1").trigger("click");
-      expect(wrapper.find("#comment-reply-draft-c1").exists()).toBe(false);
+      expect(label("c1")).toBe("Balas");
 
       await reply("c2");
       await wrapper.find("#comment-content-c2").setValue("Kirim");
       await wrapper.find("#comment-form-c2").trigger("submit");
       await flushPromises();
-      expect(wrapper.find("#comment-reply-draft-c2").exists()).toBe(false);
+      expect(label("c2")).toBe("Balas");
     });
 
     it("does not carry a draft from one comment to another", async () => {

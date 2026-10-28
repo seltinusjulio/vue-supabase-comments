@@ -358,18 +358,14 @@
               :id="`comment-reply-button-${comment.id}`"
               type="button"
               class="cmt-action"
+              :class="{ 'text-(--comment-primary)': hasReplyDraft }"
               :aria-expanded="isReplying"
               @click="toggleReply"
             >
               <CommentIcon name="message" class="h-4 w-4" />
-              <span>{{ msg.common.reply }}</span>
-              <span
-                v-if="hasReplyDraft"
-                :id="`comment-reply-draft-${comment.id}`"
-                :title="msg.node.draftTitle"
-                class="text-xs font-normal text-(--comment-primary) italic"
-                >· {{ msg.node.draft }}</span
-              >
+              <span>{{
+                hasReplyDraft ? msg.node.continueReply : msg.common.reply
+              }}</span>
             </button>
 
             <template v-if="features.voting">
@@ -536,7 +532,7 @@ const threadIndentClass = computed(() =>
 // Only one reply form is open at a time: it is whichever the section says.
 // Closing one by opening another keeps its draft; Batal discards it.
 const isReplying = computed(() => ctx.activeReplyId.value === props.comment.id);
-// A closed reply form that still holds unsent text gets a marker.
+// A closed reply form that still holds unsent text reads "Lanjutkan balasan".
 const hasReplyDraft = computed(
   () => !isReplying.value && ctx.replyDrafts.has(props.comment.id),
 );
