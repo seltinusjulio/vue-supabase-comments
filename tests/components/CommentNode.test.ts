@@ -678,6 +678,111 @@ describe("CommentNode: replying", () => {
       false,
     );
   });
+
+  describe("with several comments", () => {
+    const mountTwo = () =>
+      mountSection({
+        rows: [item("c1"), item("c2")],
+        viewer: SIGNED_IN,
+      });
+    const open =
+      (wrapper: Awaited<ReturnType<typeof mountTwo>>["wrapper"]) =>
+      (id: string) =>
+        wrapper.find(`#comment-reply-button-${id}`).trigger("click");
+
+    it("keeps one reply form open: opening another closes the first", async () => {
+      const { wrapper } = await mountTwo();
+      const reply = open(wrapper);
+
+      await reply("c1");
+      await reply("c2");
+
+      expect(wrapper.find("#comment-reply-form-container-c1").exists()).toBe(
+        false,
+      );
+      expect(wrapper.find("#comment-reply-form-container-c2").exists()).toBe(
+        true,
+      );
+      expect(
+        wrapper.find("#comment-reply-button-c1").attributes("aria-expanded"),
+      ).toBe("false");
+    });
+
+    it("restores what was typed when a closed reply form is reopened", async () => {
+      const { wrapper } = await mountTwo();
+      const reply = open(wrapper);
+
+      await reply("c1");
+      await wrapper.find("#comment-content-c1").setValue("Belum selesai");
+      await reply("c2");
+      await reply("c1");
+
+      expect(
+        (wrapper.find("#comment-content-c1").element as HTMLTextAreaElement)
+          .value,
+      ).toBe("Belum selesai");
+    });
+
+    it("keeps the draft when the same reply button closes the form", async () => {
+      const { wrapper } = await mountTwo();
+      const reply = open(wrapper);
+
+      await reply("c1");
+      await wrapper.find("#comment-content-c1").setValue("Tunggu");
+      await reply("c1");
+      await reply("c1");
+
+      expect(
+        (wrapper.find("#comment-content-c1").element as HTMLTextAreaElement)
+          .value,
+      ).toBe("Tunggu");
+    });
+
+    it("discards the draft on Batal", async () => {
+      const { wrapper } = await mountTwo();
+      const reply = open(wrapper);
+
+      await reply("c1");
+      await wrapper.find("#comment-content-c1").setValue("Dibuang");
+      await wrapper.find("#comment-form-cancel-button-c1").trigger("click");
+      await reply("c1");
+
+      expect(
+        (wrapper.find("#comment-content-c1").element as HTMLTextAreaElement)
+          .value,
+      ).toBe("");
+    });
+
+    it("clears the draft once the reply is posted", async () => {
+      const { wrapper } = await mountTwo();
+      const reply = open(wrapper);
+
+      await reply("c1");
+      await wrapper.find("#comment-content-c1").setValue("Terkirim");
+      await wrapper.find("#comment-form-c1").trigger("submit");
+      await flushPromises();
+      await reply("c1");
+
+      expect(
+        (wrapper.find("#comment-content-c1").element as HTMLTextAreaElement)
+          .value,
+      ).toBe("");
+    });
+
+    it("does not carry a draft from one comment to another", async () => {
+      const { wrapper } = await mountTwo();
+      const reply = open(wrapper);
+
+      await reply("c1");
+      await wrapper.find("#comment-content-c1").setValue("Untuk c1");
+      await reply("c2");
+
+      expect(
+        (wrapper.find("#comment-content-c2").element as HTMLTextAreaElement)
+          .value,
+      ).toBe("");
+    });
+  });
 });
 
 describe("CommentNode: thread layout", () => {

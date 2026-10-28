@@ -359,7 +359,7 @@
               type="button"
               class="cmt-action"
               :aria-expanded="isReplying"
-              @click="isReplying = !isReplying"
+              @click="toggleReply"
             >
               <CommentIcon name="message" class="h-4 w-4" />
               <span>{{ msg.common.reply }}</span>
@@ -419,7 +419,7 @@
             <CommentForm
               :parent-comment-id="comment.id"
               :reply-to-name="authorName"
-              @cancel="isReplying = false"
+              @cancel="cancelReply"
               @success="onReplySuccess"
             />
           </div>
@@ -526,7 +526,16 @@ const threadIndentClass = computed(() =>
   isReply.value ? "ml-[11px] pl-[23px]" : "ml-[15px] pl-[27px]",
 );
 
-const isReplying = ref(false);
+// Only one reply form is open at a time: it is whichever the section says.
+// Closing one by opening another keeps its draft; Batal discards it.
+const isReplying = computed(() => ctx.activeReplyId.value === props.comment.id);
+const toggleReply = () => {
+  ctx.activeReplyId.value = isReplying.value ? null : props.comment.id;
+};
+const cancelReply = () => {
+  ctx.replyDrafts.delete(props.comment.id);
+  ctx.activeReplyId.value = null;
+};
 const repliesExpanded = ref(false);
 // Not reset via a watcher: nodes are keyed by comment id, so an instance never
 // switches to another comment, and editing only changes `content`.
@@ -567,7 +576,7 @@ const showReplies = computed(
 
 // A reply posted into a collapsed thread would otherwise stay out of sight.
 const onReplySuccess = () => {
-  isReplying.value = false;
+  ctx.activeReplyId.value = null;
   repliesExpanded.value = true;
 };
 

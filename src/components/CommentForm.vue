@@ -311,18 +311,25 @@ const canAttach = computed(() => features.value.attachments && !isGuest.value);
 const fid = (base: string) =>
   props.parentCommentId ? `${base}-${props.parentCommentId}` : base;
 
-const content = ref("");
-const guestName = ref("");
-const guestEmail = ref("");
+// A reply form picks up what was typed before another reply form replaced it.
+const savedDraft = props.parentCommentId
+  ? ctx.replyDrafts.get(props.parentCommentId)
+  : undefined;
+
+const content = ref(savedDraft?.content ?? "");
+const guestName = ref(savedDraft?.guestName ?? "");
+const guestEmail = ref(savedDraft?.guestEmail ?? "");
 const showModerationMessage = ref(false);
 const isSubmitting = ref(false);
 const submitError = ref<string | null>(null);
 
 const imageInputRef = ref<HTMLInputElement | null>(null);
 const fileInputRef = ref<HTMLInputElement | null>(null);
-const selectedImage = ref<File | null>(null);
-const selectedFile = ref<File | null>(null);
-const imagePreviewUrl = ref("");
+const selectedImage = ref<File | null>(savedDraft?.image ?? null);
+const selectedFile = ref<File | null>(savedDraft?.file ?? null);
+const imagePreviewUrl = ref(
+  savedDraft?.image ? URL.createObjectURL(savedDraft.image) : "",
+);
 
 const contentRef = ref<HTMLTextAreaElement | null>(null);
 // The top-level form starts as a compact box and expands on first focus.
@@ -342,6 +349,24 @@ const isExpanded = computed(
 
 onMounted(() => {
   if (props.parentCommentId) contentRef.value?.focus();
+});
+
+// Mirrors a reply draft into the section while the form is open; the
+// top-level form keeps its own state and is never closed by another form.
+watch([content, guestName, guestEmail, selectedImage, selectedFile], () => {
+  const id = props.parentCommentId;
+  if (!id) return;
+  if (!hasDraft.value) {
+    ctx.replyDrafts.delete(id);
+    return;
+  }
+  ctx.replyDrafts.set(id, {
+    content: content.value,
+    guestName: guestName.value,
+    guestEmail: guestEmail.value,
+    image: selectedImage.value,
+    file: selectedFile.value,
+  });
 });
 
 // A new draft supersedes the previous "sent for moderation" notice.
@@ -417,6 +442,9 @@ const handleSubmit = async () => {
     removeImage();
     removeFile();
     expanded.value = false;
+    // Dropped here rather than by the draft watcher: the form is unmounted in
+    // the same tick, which cancels that watcher before it runs.
+    if (props.parentCommentId) ctx.replyDrafts.delete(props.parentCommentId);
     emit("success");
   } finally {
     isSubmitting.value = false;

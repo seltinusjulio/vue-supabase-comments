@@ -135,6 +135,7 @@ import CommentNode from "./CommentNode.vue";
 import {
   COMMENT_SECTION_CONTEXT,
   type CommentNotification,
+  type ReplyDraft,
   type TransformImageUrl,
 } from "./context";
 
@@ -236,6 +237,9 @@ const sortOptions: readonly CommentSortOrder[] = [
 
 const msg = messages;
 
+const activeReplyId = ref<string | null>(null);
+const replyDrafts = new Map<string, ReplyDraft>();
+
 const now = ref(new Date());
 let clock: ReturnType<typeof setInterval> | undefined;
 
@@ -267,6 +271,8 @@ provide(COMMENT_SECTION_CONTEXT, {
   })),
   transformImageUrl: (url, options) => props.transformImageUrl(url, options),
   now,
+  activeReplyId,
+  replyDrafts,
   slots: useSlots(),
   notify: (notification) => emit("notify", notification),
 });
