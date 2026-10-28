@@ -168,6 +168,63 @@ describe("CommentNode: status badges and owner actions", () => {
     expect(del.classes()).toContain("cmt-action--danger");
   });
 
+  it("closes the menu on a press outside it but not on one inside", async () => {
+    const { wrapper } = await mountSection({
+      rows: [own()],
+      viewer: SIGNED_IN,
+    });
+    await openActions(wrapper);
+
+    wrapper
+      .find("#comment-owner-menu-c1")
+      .element.dispatchEvent(new Event("pointerdown", { bubbles: true }));
+    await flushPromises();
+    expect(wrapper.find("#comment-owner-menu-c1").exists()).toBe(true);
+
+    document.body.dispatchEvent(new Event("pointerdown", { bubbles: true }));
+    await flushPromises();
+    expect(wrapper.find("#comment-owner-menu-c1").exists()).toBe(false);
+  });
+
+  it("closes the menu on Escape and returns focus to its button", async () => {
+    const { wrapper } = await mountSection({
+      rows: [own()],
+      viewer: SIGNED_IN,
+    });
+    await openActions(wrapper);
+
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+    await flushPromises();
+
+    expect(wrapper.find("#comment-owner-menu-c1").exists()).toBe(false);
+    expect(document.activeElement).toBe(
+      wrapper.find("#comment-owner-menu-button-c1").element,
+    );
+  });
+
+  it("stops listening once the menu is closed", async () => {
+    const add = vi.spyOn(document, "addEventListener");
+    const remove = vi.spyOn(document, "removeEventListener");
+    const { wrapper } = await mountSection({
+      rows: [own()],
+      viewer: SIGNED_IN,
+    });
+    await openActions(wrapper);
+    const added = add.mock.calls.filter(([type]) =>
+      ["pointerdown", "keydown"].includes(type),
+    ).length;
+
+    await wrapper.find("#comment-owner-menu-button-c1").trigger("click");
+
+    const removed = remove.mock.calls.filter(([type]) =>
+      ["pointerdown", "keydown"].includes(type),
+    ).length;
+    expect(added).toBe(2);
+    expect(removed).toBeGreaterThanOrEqual(added);
+    add.mockRestore();
+    remove.mockRestore();
+  });
+
   it("closes the menu after an action is chosen", async () => {
     const { wrapper } = await mountSection({
       rows: [own()],

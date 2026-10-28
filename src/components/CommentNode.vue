@@ -107,6 +107,7 @@
             <!-- Owner & Moderator actions, collapsed into one menu -->
             <div
               v-if="(isOwner || canModerate) && !isEditing"
+              ref="ownerMenuRef"
               class="relative -mr-2 ml-auto"
               :class="{ '-my-1': level > 0 }"
             >
@@ -122,10 +123,6 @@
                 <CommentIcon name="more" class="h-4 w-4" />
               </button>
               <template v-if="showOwnerMenu">
-                <div
-                  class="fixed inset-0 z-10"
-                  @click="showOwnerMenu = false"
-                />
                 <div
                   :id="`comment-owner-menu-${comment.id}`"
                   class="absolute top-full right-0 z-20 mt-1 flex min-w-40 flex-col rounded-lg border border-(--comment-border) bg-(--comment-bg) py-1 shadow-lg"
@@ -480,7 +477,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, onBeforeUnmount, ref, watch } from "vue";
 
 import type { CommentTreeNode, VoteType } from "../types";
 
@@ -560,6 +557,31 @@ const isSaving = ref(false);
 const isVoting = ref(false);
 const showDeleteConfirm = ref(false);
 const showOwnerMenu = ref(false);
+const ownerMenuRef = ref<HTMLElement | null>(null);
+
+// The actions menu closes on a press outside it or on Escape (which also
+// returns focus to its button). The listeners only exist while it is open.
+const closeOnOutsidePress = (event: Event) => {
+  if (!ownerMenuRef.value?.contains(event.target as Node)) {
+    showOwnerMenu.value = false;
+  }
+};
+const closeOnEscape = (event: KeyboardEvent) => {
+  if (event.key !== "Escape") return;
+  showOwnerMenu.value = false;
+  ownerMenuRef.value?.querySelector("button")?.focus();
+};
+const removeOwnerMenuListeners = () => {
+  document.removeEventListener("pointerdown", closeOnOutsidePress);
+  document.removeEventListener("keydown", closeOnEscape);
+};
+watch(showOwnerMenu, (open) => {
+  removeOwnerMenuListeners();
+  if (!open) return;
+  document.addEventListener("pointerdown", closeOnOutsidePress);
+  document.addEventListener("keydown", closeOnEscape);
+});
+onBeforeUnmount(removeOwnerMenuListeners);
 const isDeleting = ref(false);
 const isModerating = ref(false);
 const isPinning = ref(false);
