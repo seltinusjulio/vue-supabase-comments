@@ -25,7 +25,7 @@
         >
           <span
             >{{ msg.section.sortLabel }}
-            <span class="text-(--comment-text)">{{
+            <span class="font-semibold">{{
               msg.section.sort[sortOrder]
             }}</span></span
           >
