@@ -95,63 +95,75 @@
           </div>
         </div>
 
-        <!-- Owner & Moderator actions -->
+        <!-- Owner & Moderator actions, collapsed into one menu -->
         <div
           v-if="(isOwner || canModerate) && !isEditing"
-          :id="`comment-owner-actions-${comment.id}`"
-          class="-mt-1 -mr-2 flex shrink-0 items-center gap-1"
+          class="relative -mt-1 -mr-2 ml-auto"
         >
           <button
-            v-if="canModerate && isPending"
-            :id="`comment-approve-button-${comment.id}`"
-            type="button"
-            class="cmt-action cmt-action--success"
-            :aria-label="msg.moderation.approve"
-            :title="msg.moderation.approve"
-            :disabled="isModerating"
-            @click="handleApprove"
-          >
-            <CommentIcon name="check" class="h-4 w-4" />
-          </button>
-          <button
-            v-if="features.pinning && canModerate && level === 0"
-            :id="`comment-pin-button-${comment.id}`"
+            :id="`comment-owner-menu-button-${comment.id}`"
             type="button"
             class="cmt-action"
-            :class="{ 'cmt-action--active': comment.is_pinned }"
-            :aria-label="
-              comment.is_pinned ? msg.moderation.unpin : msg.moderation.pin
-            "
-            :title="
-              comment.is_pinned ? msg.moderation.unpin : msg.moderation.pin
-            "
-            :disabled="isPinning"
-            @click="handleTogglePin"
+            :aria-expanded="showOwnerMenu"
+            :aria-label="msg.node.moreActions"
+            :title="msg.node.moreActions"
+            @click="showOwnerMenu = !showOwnerMenu"
           >
-            <CommentIcon name="pin" class="h-4 w-4" />
+            <CommentIcon name="more" class="h-4 w-4" />
           </button>
-          <button
-            v-if="canEdit"
-            :id="`comment-edit-button-${comment.id}`"
-            type="button"
-            class="cmt-action"
-            :aria-label="msg.node.editLabel"
-            :title="msg.node.edit"
-            @click="startEdit"
-          >
-            <CommentIcon name="pencil" class="h-4 w-4" />
-          </button>
-          <button
-            v-if="canDelete"
-            :id="`comment-delete-button-${comment.id}`"
-            type="button"
-            class="cmt-action cmt-action--danger"
-            :aria-label="msg.node.deleteLabel"
-            :title="msg.common.delete"
-            @click="showDeleteConfirm = true"
-          >
-            <CommentIcon name="trash" class="h-4 w-4" />
-          </button>
+          <template v-if="showOwnerMenu">
+            <div class="fixed inset-0 z-10" @click="showOwnerMenu = false" />
+            <div
+              :id="`comment-owner-menu-${comment.id}`"
+              class="absolute right-0 top-full z-20 mt-1 flex min-w-40 flex-col rounded-lg border border-(--comment-border) bg-(--comment-bg) py-1 shadow-lg"
+            >
+              <button
+                v-if="canModerate && isPending"
+                :id="`comment-approve-button-${comment.id}`"
+                type="button"
+                class="cmt-action justify-start rounded-none"
+                :disabled="isModerating"
+                @click="showOwnerMenu = false; handleApprove()"
+              >
+                <CommentIcon name="check" class="h-4 w-4" />
+                <span>{{ msg.moderation.approve }}</span>
+              </button>
+              <button
+                v-if="features.pinning && canModerate && level === 0"
+                :id="`comment-pin-button-${comment.id}`"
+                type="button"
+                class="cmt-action justify-start rounded-none"
+                :class="{ 'cmt-action--active': comment.is_pinned }"
+                :disabled="isPinning"
+                @click="showOwnerMenu = false; handleTogglePin()"
+              >
+                <CommentIcon name="pin" class="h-4 w-4" />
+                <span>{{
+                  comment.is_pinned ? msg.moderation.unpin : msg.moderation.pin
+                }}</span>
+              </button>
+              <button
+                v-if="canEdit"
+                :id="`comment-edit-button-${comment.id}`"
+                type="button"
+                class="cmt-action justify-start rounded-none"
+                @click="showOwnerMenu = false; startEdit()"
+              >
+                <CommentIcon name="pencil" class="h-4 w-4" />
+                <span>{{ msg.node.edit }}</span>
+              </button>
+              <button
+                v-if="canDelete"
+                :id="`comment-delete-button-${comment.id}`"
+                type="button"
+                class="cmt-action cmt-action--danger justify-start rounded-none"
+                @click="showOwnerMenu = false; showDeleteConfirm = true"
+              >
+                <CommentIcon name="trash" class="h-4 w-4" />
+                <span>{{ msg.common.delete }}</span>
+              </button>
+            </div>
+          </template>
         </div>
 
         <CommentDialog
@@ -367,6 +379,7 @@
           :render="ctx.slots['comment-actions']"
           :slot-props="{ comment }"
         />
+
       </div>
 
       <div
@@ -481,6 +494,7 @@ const editContent = ref("");
 const isSaving = ref(false);
 const isVoting = ref(false);
 const showDeleteConfirm = ref(false);
+const showOwnerMenu = ref(false);
 const isDeleting = ref(false);
 const isModerating = ref(false);
 const isPinning = ref(false);

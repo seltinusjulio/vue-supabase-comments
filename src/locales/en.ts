@@ -52,6 +52,7 @@ export const en: CommentMessages = {
     edit: "Edit",
     editLabel: "Edit comment",
     deleteLabel: "Delete comment",
+    moreActions: "More actions",
     deleteTitle: "Delete Comment",
     deleteConfirm: "Delete this comment? Deleted comments are no longer shown.",
     deleting: "Deleting...",

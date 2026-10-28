@@ -55,6 +55,11 @@
         d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a1 1 0 0 0 0-2H8a1 1 0 0 0 0 2h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"
       />
     </template>
+    <template v-else-if="name === 'more'">
+      <circle cx="5" cy="12" r="1" />
+      <circle cx="12" cy="12" r="1" />
+      <circle cx="19" cy="12" r="1" />
+    </template>
     <template v-else-if="name === 'search'">
       <circle cx="11" cy="11" r="8" />
       <line x1="21" y1="21" x2="16.65" y2="16.65" />
@@ -76,6 +81,7 @@ export type CommentIconName =
   | "chevron-up"
   | "close"
   | "message"
+  | "more"
   | "paperclip"
   | "pencil"
   | "pin"

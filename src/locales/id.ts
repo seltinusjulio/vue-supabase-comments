@@ -51,6 +51,7 @@ export const id: CommentMessages = {
     edit: "Sunting",
     editLabel: "Sunting komentar",
     deleteLabel: "Hapus komentar",
+    moreActions: "Aksi lainnya",
     deleteTitle: "Hapus Komentar",
     deleteConfirm:
       "Hapus komentar ini? Komentar yang dihapus tidak akan ditampilkan lagi.",

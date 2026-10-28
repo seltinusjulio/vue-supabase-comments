@@ -215,6 +215,7 @@ export interface CommentMessages {
     edit: string;
     editLabel: string;
     deleteLabel: string;
+    moreActions: string;
     deleteTitle: string;
     deleteConfirm: string;
     deleting: string;
