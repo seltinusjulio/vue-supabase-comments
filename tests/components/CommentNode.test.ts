@@ -876,4 +876,23 @@ describe("CommentNode: moderation actions", () => {
       expect.objectContaining({ level: "error" }),
     ]);
   });
+
+  it("does not show pin button or pinned badge on replies", async () => {
+    const { wrapper } = await mountSection({
+      rows: [
+        item("root", { is_pinned: false }),
+        item("reply", {
+          parent_comment_id: "root",
+          path: "root.reply",
+          is_pinned: true,
+        }),
+      ],
+      viewer: { ...SIGNED_IN, canModerate: true },
+      props: { enablePinning: true },
+    });
+
+    expect(wrapper.find("#comment-pin-button-root").exists()).toBe(true);
+    expect(wrapper.find("#comment-pin-button-reply").exists()).toBe(false);
+    expect(wrapper.find("#comment-pinned-badge-reply").exists()).toBe(false);
+  });
 });

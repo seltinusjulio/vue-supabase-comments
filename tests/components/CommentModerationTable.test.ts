@@ -251,6 +251,24 @@ describe("CommentModerationTable", () => {
     expect(adapter.pinComment).toHaveBeenCalledWith("c1", true);
   });
 
+  it("does not allow pinning reply comments in moderation table", async () => {
+    const adapter = createFakeAdapter();
+    adapter.fetchModerationQueue.mockResolvedValueOnce([
+      modItem("c-reply", {
+        parent_comment_id: "c1",
+        is_pinned: true,
+      }),
+    ]);
+
+    const wrapper = mount(CommentModerationTable, {
+      props: { adapter, enablePinning: true },
+    });
+    await flushPromises();
+
+    expect(wrapper.find("#comment-pin-button-c-reply").exists()).toBe(false);
+    expect(wrapper.find("#comment-pinned-badge-c-reply").exists()).toBe(false);
+  });
+
   it("displays guest_email to staff", async () => {
     const adapter = createFakeAdapter();
     adapter.fetchModerationQueue.mockResolvedValueOnce([

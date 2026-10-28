@@ -255,7 +255,7 @@
                   {{ msg.moderation.statusBanned }}
                 </span>
                 <span
-                  v-if="enablePinning && comment.is_pinned"
+                  v-if="enablePinning && comment.is_pinned && !comment.parent_comment_id"
                   :id="`comment-pinned-badge-${comment.id}`"
                   class="cmt-badge cmt-badge--primary inline-flex w-fit text-xs font-semibold"
                 >
@@ -400,7 +400,7 @@
 
                 <!-- Pin / Unpin -->
                 <button
-                  v-if="enablePinning"
+                  v-if="enablePinning && !comment.parent_comment_id"
                   :id="`comment-pin-button-${comment.id}`"
                   type="button"
                   class="cmt-btn cmt-btn--secondary text-xs"

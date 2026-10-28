@@ -75,7 +75,7 @@
               >{{ msg.node.edited }}</span
             >
             <span
-              v-if="features.pinning && comment.is_pinned"
+              v-if="features.pinning && comment.is_pinned && level === 0"
               :id="`comment-pinned-badge-${comment.id}`"
               class="cmt-badge cmt-badge--primary"
               >{{ msg.node.pinned }}</span
@@ -114,7 +114,7 @@
             <CommentIcon name="check" class="h-4 w-4" />
           </button>
           <button
-            v-if="features.pinning && canModerate"
+            v-if="features.pinning && canModerate && level === 0"
             :id="`comment-pin-button-${comment.id}`"
             type="button"
             class="cmt-action"

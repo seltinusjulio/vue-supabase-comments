@@ -969,4 +969,22 @@ describe("useCommentTree: pinComment and moderateComment", () => {
     expect(result).toBe(false);
     expect(tree.error.value).toBe("moderate failed");
   });
+
+  it("defaults to 'pinned' sortOrder and keeps pinned comment on top when enablePinning is true", async () => {
+    serve([
+      item("c1", { created_at: "2026-01-01T00:00:00Z" }),
+      item("c2", { created_at: "2026-01-02T00:00:00Z", is_pinned: true }),
+    ]);
+    const tree = setup({ enablePinning: true });
+    await tree.load();
+
+    expect(tree.sortOrder.value).toBe("pinned");
+    expect(tree.visibleComments.value.map((c) => c.id)).toEqual(["c2", "c1"]);
+
+    tree.setSortOrder("oldest");
+    expect(tree.visibleComments.value.map((c) => c.id)).toEqual(["c2", "c1"]);
+
+    tree.setSortOrder("newest");
+    expect(tree.visibleComments.value.map((c) => c.id)).toEqual(["c2", "c1"]);
+  });
 });

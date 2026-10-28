@@ -119,28 +119,39 @@ describe("sortRoots", () => {
   ]);
   const ids = (nodes: CommentTreeNode[]) => nodes.map((c) => c.id);
 
-  it("keeps the input order for oldest first", () => {
-    expect(sortRoots(roots, "oldest")).toBe(roots);
+  it("keeps the input order for oldest first when there are no pinned comments", () => {
+    const unpinnedRoots = roots.filter((r) => !r.is_pinned);
+    expect(sortRoots(unpinnedRoots, "oldest")).toBe(unpinnedRoots);
   });
 
-  it("sorts newest first", () => {
-    expect(ids(sortRoots(roots, "newest"))).toEqual([
+  it("puts pinned comments at the top in oldest first order", () => {
+    expect(ids(sortRoots(roots, "oldest"))).toEqual([
       "newer",
-      "new",
-      "mid",
-      "old",
       "pinned-old",
+      "old",
+      "mid",
+      "new",
     ]);
   });
 
-  it("sorts by score (up minus down), breaking ties with the newest", () => {
-    // mid = 4, new = 4 (newer wins the tie), old = 1, the rest 0
-    expect(ids(sortRoots(roots, "popular"))).toEqual([
+  it("puts pinned comments at the top in newest first order", () => {
+    expect(ids(sortRoots(roots, "newest"))).toEqual([
+      "newer",
+      "pinned-old",
       "new",
       "mid",
       "old",
+    ]);
+  });
+
+  it("puts pinned comments at the top in popular order", () => {
+    // mid = 4, new = 4 (newer wins the tie), old = 1, pinned roots stay at the top
+    expect(ids(sortRoots(roots, "popular"))).toEqual([
       "newer",
       "pinned-old",
+      "new",
+      "mid",
+      "old",
     ]);
   });
 
@@ -151,6 +162,24 @@ describe("sortRoots", () => {
       "new",
       "mid",
       "old",
+    ]);
+  });
+
+  it("ignores is_pinned when enablePinning is false", () => {
+    expect(sortRoots(roots, "oldest", false)).toBe(roots);
+    expect(ids(sortRoots(roots, "newest", false))).toEqual([
+      "newer",
+      "new",
+      "mid",
+      "old",
+      "pinned-old",
+    ]);
+    expect(ids(sortRoots(roots, "popular", false))).toEqual([
+      "new",
+      "mid",
+      "old",
+      "newer",
+      "pinned-old",
     ]);
   });
 

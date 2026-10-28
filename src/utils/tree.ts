@@ -82,20 +82,54 @@ const byNewest = (a: CommentTreeNode, b: CommentTreeNode) =>
 
 /**
  * Sorts top-level comments without mutating the input. `oldest` keeps the
- * backend order (path order is chronological for roots).
+ * backend order (path order is chronological for roots). When pinning is
+ * active, pinned comments always appear at the top.
  */
 export function sortRoots(
   roots: CommentTreeNode[],
   order: CommentSortOrder,
+  enablePinning = true,
 ): CommentTreeNode[] {
-  if (order === "oldest") return roots;
-  if (order === "newest") return [...roots].sort(byNewest);
-  if (order === "pinned") {
-    const pinned = (c: CommentTreeNode) => (c.is_pinned ? 1 : 0);
-    return [...roots].sort((a, b) => pinned(b) - pinned(a) || byNewest(a, b));
+  const isPinningActive = enablePinning || order === "pinned";
+
+  if (!isPinningActive) {
+    if (order === "oldest") return roots;
+    if (order === "newest" || order === "pinned") return [...roots].sort(byNewest);
+    const score = (c: CommentTreeNode) => c.upvote_count - c.downvote_count;
+    return [...roots].sort((a, b) => score(b) - score(a) || byNewest(a, b));
   }
+
+  const pinnedRoots: CommentTreeNode[] = [];
+  const normalRoots: CommentTreeNode[] = [];
+
+  for (const root of roots) {
+    if (root.is_pinned) {
+      pinnedRoots.push(root);
+    } else {
+      normalRoots.push(root);
+    }
+  }
+
+  if (pinnedRoots.length === 0 && order === "oldest") {
+    return roots;
+  }
+
   const score = (c: CommentTreeNode) => c.upvote_count - c.downvote_count;
-  return [...roots].sort((a, b) => score(b) - score(a) || byNewest(a, b));
+
+  const sortGroup = (group: CommentTreeNode[]) => {
+    if (order === "oldest") return group;
+    if (order === "newest" || order === "pinned") return [...group].sort(byNewest);
+    return [...group].sort((a, b) => score(b) - score(a) || byNewest(a, b));
+  };
+
+  const sortedPinned =
+    order === "popular"
+      ? [...pinnedRoots].sort((a, b) => score(b) - score(a) || byNewest(a, b))
+      : order === "oldest"
+        ? pinnedRoots
+        : [...pinnedRoots].sort(byNewest);
+
+  return [...sortedPinned, ...sortGroup(normalRoots)];
 }
 
 /**

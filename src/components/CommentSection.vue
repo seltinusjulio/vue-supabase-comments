@@ -210,6 +210,7 @@ function createOwnTree(): CommentTree {
     viewer: () => props.viewer,
     messages,
     pageSize: props.pageSize,
+    enablePinning: () => props.enablePinning,
     onError: (context, error) => props.errorHandler?.(context, error),
   });
 }
