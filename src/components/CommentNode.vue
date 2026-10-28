@@ -487,10 +487,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, watch } from "vue";
+import { computed, ref } from "vue";
 
 import type { CommentTreeNode, VoteType } from "../types";
 
+import { useDismissableMenu } from "../composables/useDismissableMenu";
 import { formatDateTime, formatRelativeTime } from "../utils/time";
 import { safeLinkUrl } from "../utils/url";
 import CommentAvatarFallback from "./CommentAvatarFallback.vue";
@@ -539,7 +540,7 @@ const threadIndentClass = computed(() =>
 // Only one reply form is open at a time: it is whichever the section says.
 // Closing one by opening another keeps its draft; Batal discards it.
 const isReplying = computed(() => ctx.activeReplyId.value === props.comment.id);
-// A closed reply form that still holds unsent text reads "Lanjutkan balasan".
+// A closed reply form that still holds an unsent draft offers to continue it.
 const hasReplyDraft = computed(
   () => !isReplying.value && ctx.replyDrafts.has(props.comment.id),
 );
@@ -566,32 +567,8 @@ const editContent = ref("");
 const isSaving = ref(false);
 const isVoting = ref(false);
 const showDeleteConfirm = ref(false);
-const showOwnerMenu = ref(false);
 const ownerMenuRef = ref<HTMLElement | null>(null);
-
-// The actions menu closes on a press outside it or on Escape (which also
-// returns focus to its button). The listeners only exist while it is open.
-const closeOnOutsidePress = (event: Event) => {
-  if (!ownerMenuRef.value?.contains(event.target as Node)) {
-    showOwnerMenu.value = false;
-  }
-};
-const closeOnEscape = (event: KeyboardEvent) => {
-  if (event.key !== "Escape") return;
-  showOwnerMenu.value = false;
-  ownerMenuRef.value?.querySelector("button")?.focus();
-};
-const removeOwnerMenuListeners = () => {
-  document.removeEventListener("pointerdown", closeOnOutsidePress);
-  document.removeEventListener("keydown", closeOnEscape);
-};
-watch(showOwnerMenu, (open) => {
-  removeOwnerMenuListeners();
-  if (!open) return;
-  document.addEventListener("pointerdown", closeOnOutsidePress);
-  document.addEventListener("keydown", closeOnEscape);
-});
-onBeforeUnmount(removeOwnerMenuListeners);
+const { isOpen: showOwnerMenu } = useDismissableMenu(ownerMenuRef);
 const isDeleting = ref(false);
 const isModerating = ref(false);
 const isPinning = ref(false);

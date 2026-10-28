@@ -180,6 +180,7 @@ export interface CommentMessages {
     emptyTitle: string;
     emptyHint: string;
     sortLabel: string;
+    sortButton: string;
     sortGroupLabel: string;
     sort: Record<CommentSortOrder, string>;
     loadMore: (remaining: number) => string;

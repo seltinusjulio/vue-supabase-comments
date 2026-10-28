@@ -125,6 +125,86 @@ describe("CommentSection", () => {
       expect(wrapper.find("#comment-pinned-badge-new").exists()).toBe(false);
     });
 
+    describe("compact sort menu (narrow screens)", () => {
+      const menuOrders = (
+        wrapper: Awaited<ReturnType<typeof mountSection>>["wrapper"],
+      ) =>
+        wrapper
+          .findAll("#comment-section-sort-menu button")
+          .map((b) => b.text());
+
+      it("is hidden with fewer than two comments", async () => {
+        const { wrapper } = await mountSection({ rows: [item("c1")] });
+
+        expect(wrapper.find("#comment-section-sort-menu-button").exists()).toBe(
+          false,
+        );
+      });
+
+      it("opens from one Urutkan button and lists the three orders", async () => {
+        const { wrapper } = await mountSection({ rows });
+        const button = wrapper.find("#comment-section-sort-menu-button");
+        expect(button.attributes("aria-expanded")).toBe("false");
+        expect(wrapper.find("#comment-section-sort-menu").exists()).toBe(false);
+
+        await button.trigger("click");
+
+        expect(button.attributes("aria-expanded")).toBe("true");
+        expect(menuOrders(wrapper)).toEqual([
+          "Terbaru",
+          "Terlama",
+          "Terpopuler",
+        ]);
+        expect(
+          wrapper
+            .find("#comment-section-sort-menu-oldest")
+            .attributes("aria-pressed"),
+        ).toBe("true");
+      });
+
+      it("re-orders the comments and closes when an order is chosen", async () => {
+        const { wrapper } = await mountSection({ rows });
+        await wrapper
+          .find("#comment-section-sort-menu-button")
+          .trigger("click");
+
+        await wrapper
+          .find("#comment-section-sort-menu-popular")
+          .trigger("click");
+
+        expect(wrapper.find("#comment-section-sort-menu").exists()).toBe(false);
+        expect(
+          wrapper
+            .findAll("#comment-section-list > [id^='comment-node-']")
+            .map((n) => n.attributes("id")),
+        ).toEqual(["comment-node-mid", "comment-node-old", "comment-node-new"]);
+        // The desktop buttons follow the same order.
+        expect(
+          wrapper
+            .find("#comment-section-sort-popular")
+            .attributes("aria-pressed"),
+        ).toBe("true");
+      });
+
+      it("closes on a press outside and on Escape, returning focus", async () => {
+        const { wrapper } = await mountSection({ rows });
+        const button = wrapper.find("#comment-section-sort-menu-button");
+
+        await button.trigger("click");
+        document.body.dispatchEvent(
+          new Event("pointerdown", { bubbles: true }),
+        );
+        await flushPromises();
+        expect(wrapper.find("#comment-section-sort-menu").exists()).toBe(false);
+
+        await button.trigger("click");
+        document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+        await flushPromises();
+        expect(wrapper.find("#comment-section-sort-menu").exists()).toBe(false);
+        expect(document.activeElement).toBe(button.element);
+      });
+    });
+
     it("shares a header row with the heading slot, above the form", async () => {
       const { wrapper } = await mountSection({
         rows,
