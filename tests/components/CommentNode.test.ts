@@ -274,6 +274,33 @@ describe("CommentNode: status badges and owner actions", () => {
   });
 });
 
+describe("CommentNode: header layout", () => {
+  it("groups the name and badge apart from the date and status, so narrow screens get two lines", async () => {
+    const { wrapper } = await mountSection({
+      rows: [own({ status: "pending_review" })],
+      viewer: SIGNED_IN,
+      slots: { "author-badge": () => h("span", { id: "badge" }, "Staf") },
+    });
+
+    const [identity, details] = wrapper.findAll("#comment-meta-c1 > div");
+    expect(identity?.find("#comment-author-name-c1").exists()).toBe(true);
+    expect(identity?.find("#badge").exists()).toBe(true);
+    expect(details?.find("#comment-date-c1").exists()).toBe(true);
+    expect(details?.find("#comment-pending-badge-c1").exists()).toBe(true);
+    // From `sm` up both groups dissolve into one wrapping row.
+    expect(identity?.classes()).toContain("sm:contents");
+    expect(details?.classes()).toContain("sm:contents");
+  });
+
+  it("shows the full author name as a tooltip when it is truncated", async () => {
+    const { wrapper } = await mountSection({ rows: [own()] });
+
+    expect(wrapper.find("#comment-author-name-c1").attributes("title")).toBe(
+      "Budi",
+    );
+  });
+});
+
 describe("CommentNode: dates and author", () => {
   it("shows a relative date with the absolute date as title", async () => {
     const { wrapper } = await mountSection({

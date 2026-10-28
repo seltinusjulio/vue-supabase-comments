@@ -52,56 +52,66 @@
           >
             <div
               :id="`comment-meta-${comment.id}`"
-              class="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5"
+              class="flex min-w-0 flex-col justify-center gap-y-0.5 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-2"
               :class="headerHeightClass"
             >
-              <span
-                :id="`comment-author-name-${comment.id}`"
-                class="truncate font-semibold text-(--comment-heading)"
-                >{{ authorName }}</span
+              <!-- Narrow screens: the name and role badge on one line, the
+                   date and status on the next, at every reply level. From
+                   `sm` up the groups dissolve into a single wrapping row. -->
+              <div class="flex min-w-0 items-center gap-x-2 sm:contents">
+                <span
+                  :id="`comment-author-name-${comment.id}`"
+                  :title="authorName"
+                  class="truncate font-semibold text-(--comment-heading)"
+                  >{{ authorName }}</span
+                >
+                <SlotOutlet
+                  v-if="ctx.slots['author-badge'] && comment.author"
+                  :render="ctx.slots['author-badge']"
+                  :slot-props="{ author: comment.author, comment }"
+                />
+              </div>
+              <div
+                class="flex flex-wrap items-center gap-x-2 gap-y-0.5 sm:contents"
               >
-              <SlotOutlet
-                v-if="ctx.slots['author-badge'] && comment.author"
-                :render="ctx.slots['author-badge']"
-                :slot-props="{ author: comment.author, comment }"
-              />
-              <time
-                :id="`comment-date-${comment.id}`"
-                :datetime="comment.created_at ?? undefined"
-                :title="absoluteDate"
-                class="text-xs text-(--comment-text-muted)"
-                >{{ relativeDate }}</time
-              >
-              <span
-                v-if="
-                  comment.updated_at &&
-                  comment.updated_at !== comment.created_at
-                "
-                :id="`comment-edited-${comment.id}`"
-                class="text-xs text-(--comment-text-muted) italic"
-                >{{ msg.node.edited }}</span
-              >
-              <!-- Muted like the date, so status badges keep the colour. -->
-              <span
-                v-if="features.pinning && comment.is_pinned && level === 0"
-                :id="`comment-pinned-badge-${comment.id}`"
-                class="inline-flex items-center gap-1 text-xs text-(--comment-text-muted)"
-              >
-                <CommentIcon name="pin" class="h-3.5 w-3.5" />
-                <span>{{ msg.node.pinned }}</span>
-              </span>
-              <span
-                v-if="isPending"
-                :id="`comment-pending-badge-${comment.id}`"
-                class="cmt-badge cmt-badge--warning"
-                >{{ msg.node.pending }}</span
-              >
-              <span
-                v-if="isHidden"
-                :id="`comment-hidden-badge-${comment.id}`"
-                class="cmt-badge cmt-badge--danger"
-                >{{ msg.node.deletedForPublic }}</span
-              >
+                <time
+                  :id="`comment-date-${comment.id}`"
+                  :datetime="comment.created_at ?? undefined"
+                  :title="absoluteDate"
+                  class="text-xs text-(--comment-text-muted)"
+                  >{{ relativeDate }}</time
+                >
+                <span
+                  v-if="
+                    comment.updated_at &&
+                    comment.updated_at !== comment.created_at
+                  "
+                  :id="`comment-edited-${comment.id}`"
+                  class="text-xs text-(--comment-text-muted) italic"
+                  >{{ msg.node.edited }}</span
+                >
+                <!-- Muted like the date, so status badges keep the colour. -->
+                <span
+                  v-if="features.pinning && comment.is_pinned && level === 0"
+                  :id="`comment-pinned-badge-${comment.id}`"
+                  class="inline-flex items-center gap-1 text-xs text-(--comment-text-muted)"
+                >
+                  <CommentIcon name="pin" class="h-3.5 w-3.5" />
+                  <span>{{ msg.node.pinned }}</span>
+                </span>
+                <span
+                  v-if="isPending"
+                  :id="`comment-pending-badge-${comment.id}`"
+                  class="cmt-badge cmt-badge--warning"
+                  >{{ msg.node.pending }}</span
+                >
+                <span
+                  v-if="isHidden"
+                  :id="`comment-hidden-badge-${comment.id}`"
+                  class="cmt-badge cmt-badge--danger"
+                  >{{ msg.node.deletedForPublic }}</span
+                >
+              </div>
             </div>
 
             <!-- Owner & Moderator actions, collapsed into one menu -->
