@@ -255,7 +255,11 @@
                   {{ msg.moderation.statusBanned }}
                 </span>
                 <span
-                  v-if="enablePinning && comment.is_pinned && !comment.parent_comment_id"
+                  v-if="
+                    enablePinning &&
+                    comment.is_pinned &&
+                    !comment.parent_comment_id
+                  "
                   :id="`comment-pinned-badge-${comment.id}`"
                   class="cmt-badge cmt-badge--primary inline-flex w-fit text-xs font-semibold"
                 >
