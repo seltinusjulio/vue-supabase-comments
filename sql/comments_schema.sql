@@ -1,7 +1,7 @@
 -- ============================================================================
--- Domain-Agnostic Threaded Comments Schema Recipe for PostgreSQL 16+ & Supabase
+-- Domain-Agnostic Threaded Comments Schema Recipe for PostgreSQL 16+
 --
--- Module: vue-supabase-comments (packages/comments)
+-- Module: vue-threaded-comments (packages/comments)
 --
 -- Features:
 --   - Hierarchical threaded comments powered by PostgreSQL ltree.
@@ -24,7 +24,7 @@ DO $$
 BEGIN
     -- Raw UUID labels with hyphens in ltree require PostgreSQL 16 or newer.
     IF current_setting('server_version_num')::integer < 160000 THEN
-        RAISE EXCEPTION 'vue-supabase-comments requires PostgreSQL 16 or newer (detected %)',
+        RAISE EXCEPTION 'vue-threaded-comments requires PostgreSQL 16 or newer (detected %)',
             current_setting('server_version');
     END IF;
 END $$;

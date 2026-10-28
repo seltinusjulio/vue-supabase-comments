@@ -30,7 +30,7 @@ const COMPONENTS = [
  */
 export default defineNuxtModule<CommentsModuleOptions>({
   meta: {
-    name: "vue-supabase-comments",
+    name: "vue-threaded-comments",
     configKey: "comments",
   },
   defaults: {

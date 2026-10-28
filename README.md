@@ -1,4 +1,4 @@
-# vue-supabase-comments
+# vue-threaded-comments
 
 > Domain-agnostic, hierarchical threaded comments engine for Vue 3 and Nuxt with a pluggable backend adapter, PostgreSQL `ltree` support, Tailwind CSS v4 readiness, and zero framework lock-in.
 
@@ -49,7 +49,7 @@
 ### Option A: Git Submodule (Recommended for multi-repo private setups)
 
 ```bash
-git submodule add https://github.com/<org>/vue-supabase-comments.git packages/comments
+git submodule add https://github.com/<org>/vue-threaded-comments.git packages/comments
 ```
 
 ### Option B: Local / Monorepo Package
@@ -114,12 +114,12 @@ Import components and styles directly in your application:
 
 ```ts
 // main.ts
-import "vue-supabase-comments/styles.css";
+import "vue-threaded-comments/styles.css";
 ```
 
 ```vue
 <script setup lang="ts">
-import { CommentSection, useCommentTree } from "vue-supabase-comments";
+import { CommentSection, useCommentTree } from "vue-threaded-comments";
 </script>
 ```
 
@@ -176,7 +176,7 @@ import type {
   CommentItem,
   CommentTarget,
   SubmitCommentPayload,
-} from "vue-supabase-comments";
+} from "vue-threaded-comments";
 
 export function createSupabaseCommentsAdapter(
   supabase: SupabaseClient,
@@ -312,7 +312,7 @@ The primary interactive comment section displaying threaded comments, voting, re
 ```vue
 <script setup lang="ts">
 import { computed } from "vue";
-import { CommentSection } from "vue-supabase-comments";
+import { CommentSection } from "vue-threaded-comments";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { commentsAdapter } from "@/utils/commentsAdapter";
 
@@ -388,7 +388,7 @@ Full-featured moderation dashboard for staff and administrators.
 
 ```vue
 <script setup lang="ts">
-import { CommentModerationTable } from "vue-supabase-comments";
+import { CommentModerationTable } from "vue-threaded-comments";
 import { commentsAdapter } from "@/utils/commentsAdapter";
 
 function resolveTargetUrl(comment: { target_id: string; target_type: string }) {
@@ -437,7 +437,7 @@ function resolveTargetUrl(comment: { target_id: string; target_type: string }) {
 For headless UI implementations or custom layouts, `useCommentTree` provides all reactive state and tree manipulation:
 
 ```ts
-import { useCommentTree } from "vue-supabase-comments";
+import { useCommentTree } from "vue-threaded-comments";
 
 const tree = useCommentTree(adapter, {
   target: () => ({ targetId: "article-123", targetType: "article" }),
@@ -456,7 +456,7 @@ await tree.load();
 The module ships with full Indonesian (`id`) and English (`en`) dictionary presets. You can override specific keys or provide an entire custom dictionary:
 
 ```ts
-import { resolveCommentMessages, id } from "vue-supabase-comments";
+import { resolveCommentMessages, id } from "vue-threaded-comments";
 
 const customMessages = resolveCommentMessages("id", {
   form: {
