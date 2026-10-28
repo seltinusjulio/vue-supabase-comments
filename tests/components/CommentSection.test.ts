@@ -124,6 +124,39 @@ describe("CommentSection", () => {
 
       expect(wrapper.find("#comment-pinned-badge-new").exists()).toBe(false);
     });
+
+    it("shares a header row with the heading slot, above the form", async () => {
+      const { wrapper } = await mountSection({
+        rows,
+        slots: { heading: '<h2 id="slot-heading">Komentar</h2>' },
+      });
+
+      const header = wrapper.find("#comment-section-header");
+      expect(header.find("#slot-heading").exists()).toBe(true);
+      expect(header.find("#comment-section-sort").exists()).toBe(true);
+      expect(
+        header.element.compareDocumentPosition(
+          wrapper.find("#comment-form-container, #comment-form-auth-prompt")
+            .element,
+        ) & Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy();
+    });
+
+    it("renders the heading slot alone when there is nothing to sort", async () => {
+      const { wrapper } = await mountSection({
+        rows: [item("c1")],
+        slots: { heading: '<h2 id="slot-heading">Komentar</h2>' },
+      });
+
+      expect(wrapper.find("#comment-section-header").exists()).toBe(true);
+      expect(wrapper.find("#comment-section-sort").exists()).toBe(false);
+    });
+
+    it("renders no header row without a heading slot or sort", async () => {
+      const { wrapper } = await mountSection({ rows: [item("c1")] });
+
+      expect(wrapper.find("#comment-section-header").exists()).toBe(false);
+    });
   });
 
   it("offers to load more when comments exceed the first page", async () => {

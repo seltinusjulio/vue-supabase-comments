@@ -1,5 +1,39 @@
 <template>
   <div id="comment-section-container" class="comments-root space-y-6">
+    <!-- Heading and sort share a row above the form, as on YouTube. When the
+         two do not fit, the sort wraps below the heading. -->
+    <div
+      v-if="$slots.heading || comments.length > 1"
+      id="comment-section-header"
+      class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2"
+    >
+      <slot name="heading" />
+      <div
+        v-if="comments.length > 1"
+        id="comment-section-sort"
+        role="group"
+        :aria-label="msg.section.sortGroupLabel"
+        class="-ml-2 flex flex-wrap items-center gap-1 sm:-mr-2 sm:ml-auto"
+      >
+        <span
+          id="comment-section-sort-label"
+          class="mr-1 pl-2 text-sm text-(--comment-text-muted) sm:pl-0"
+          >{{ msg.section.sortLabel }}</span
+        >
+        <button
+          v-for="order in sortOptions"
+          :id="`comment-section-sort-${order}`"
+          :key="order"
+          type="button"
+          class="cmt-action"
+          :class="{ 'cmt-action--active': sortOrder === order }"
+          :aria-pressed="sortOrder === order"
+          @click="tree.setSortOrder(order)"
+        >
+          {{ msg.section.sort[order] }}
+        </button>
+      </div>
+    </div>
     <CommentForm />
     <div
       v-if="error && comments.length === 0"
@@ -33,31 +67,6 @@
       </p>
     </div>
     <div v-else id="comment-section-list">
-      <div
-        v-if="comments.length > 1"
-        id="comment-section-sort"
-        role="group"
-        :aria-label="msg.section.sortGroupLabel"
-        class="mb-2 flex flex-wrap items-center justify-end gap-1"
-      >
-        <span
-          id="comment-section-sort-label"
-          class="mr-1 text-sm text-(--comment-text-muted)"
-          >{{ msg.section.sortLabel }}</span
-        >
-        <button
-          v-for="order in sortOptions"
-          :id="`comment-section-sort-${order}`"
-          :key="order"
-          type="button"
-          class="cmt-action"
-          :class="{ 'cmt-action--active': sortOrder === order }"
-          :aria-pressed="sortOrder === order"
-          @click="tree.setSortOrder(order)"
-        >
-          {{ msg.section.sort[order] }}
-        </button>
-      </div>
       <CommentNode
         v-for="comment in visibleComments"
         :key="comment.id"
