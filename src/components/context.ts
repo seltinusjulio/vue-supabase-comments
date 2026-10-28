@@ -35,6 +35,15 @@ export interface CommentFeatures {
   editWindowMinutes: number | null;
 }
 
+/** What a reply form keeps while another comment's reply form is open. */
+export interface ReplyDraft {
+  content: string;
+  guestName: string;
+  guestEmail: string;
+  image: File | null;
+  file: File | null;
+}
+
 /** What CommentSection shares with the nodes and forms it renders. */
 export interface CommentSectionContext {
   tree: CommentTree;
@@ -50,6 +59,17 @@ export interface CommentSectionContext {
   transformImageUrl: (url: string, options: { width: number }) => string;
   /** Shared clock for relative dates; one timer serves every comment. */
   now: Ref<Date>;
+  /**
+   * The comment whose reply form is open, if any. Only one is open at a time:
+   * opening another closes the previous one.
+   */
+  activeReplyId: Ref<string | null>;
+  /**
+   * Unsent reply text and attachments by comment id, so closing a reply form
+   * to open another does not lose what was typed. Reactive, so a comment can
+   * show that it has a draft.
+   */
+  replyDrafts: Map<string, ReplyDraft>;
   /** The host's slots, forwarded to nested nodes. */
   slots: Slots;
   notify: (notification: CommentNotification) => void;

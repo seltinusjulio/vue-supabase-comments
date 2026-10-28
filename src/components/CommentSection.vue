@@ -1,5 +1,94 @@
 <template>
   <div id="comment-section-container" class="comments-root space-y-6">
+    <!-- Heading and sort share a row above the form, as on YouTube. Below
+         `sm` the sort is one compact button with a menu, so it does not take
+         a row of its own; from `sm` up it is the row of buttons. -->
+    <div
+      v-if="$slots.heading || comments.length > 1"
+      id="comment-section-header"
+      class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2"
+    >
+      <slot name="heading" />
+      <div
+        v-if="comments.length > 1"
+        id="comment-section-sort-menu-container"
+        ref="sortMenuRef"
+        class="relative -mr-2 ml-auto sm:hidden"
+      >
+        <button
+          id="comment-section-sort-menu-button"
+          type="button"
+          class="cmt-action"
+          aria-haspopup="true"
+          :aria-expanded="isSortMenuOpen"
+          @click="toggleSortMenu"
+        >
+          <span
+            >{{ msg.section.sortLabel }}
+            <span class="font-semibold">{{
+              msg.section.sort[sortOrder]
+            }}</span></span
+          >
+          <CommentIcon
+            name="chevron-up"
+            class="h-4 w-4 transition-transform"
+            :class="{ 'rotate-180': !isSortMenuOpen }"
+          />
+        </button>
+        <div
+          v-if="isSortMenuOpen"
+          id="comment-section-sort-menu"
+          role="group"
+          :aria-label="msg.section.sortGroupLabel"
+          class="absolute top-full right-0 z-20 mt-1 flex min-w-40 flex-col rounded-lg border border-(--comment-border) bg-(--comment-bg) py-1 shadow-lg"
+        >
+          <button
+            v-for="order in sortOptions"
+            :id="`comment-section-sort-menu-${order}`"
+            :key="order"
+            type="button"
+            class="cmt-action justify-start rounded-none"
+            :class="{ 'cmt-action--active': sortOrder === order }"
+            :aria-pressed="sortOrder === order"
+            @click="chooseSort(order)"
+          >
+            <span class="flex h-4 w-4 shrink-0 items-center justify-center">
+              <CommentIcon
+                v-if="sortOrder === order"
+                name="check"
+                class="h-4 w-4"
+              />
+            </span>
+            <span>{{ msg.section.sort[order] }}</span>
+          </button>
+        </div>
+      </div>
+      <div
+        v-if="comments.length > 1"
+        id="comment-section-sort"
+        role="group"
+        :aria-label="msg.section.sortGroupLabel"
+        class="hidden flex-wrap items-center gap-1 sm:-mr-2 sm:ml-auto sm:flex"
+      >
+        <span
+          id="comment-section-sort-label"
+          class="mr-1 text-sm text-(--comment-text-muted)"
+          >{{ msg.section.sortLabel }}</span
+        >
+        <button
+          v-for="order in sortOptions"
+          :id="`comment-section-sort-${order}`"
+          :key="order"
+          type="button"
+          class="cmt-action"
+          :class="{ 'cmt-action--active': sortOrder === order }"
+          :aria-pressed="sortOrder === order"
+          @click="tree.setSortOrder(order)"
+        >
+          {{ msg.section.sort[order] }}
+        </button>
+      </div>
+    </div>
     <CommentForm />
     <div
       v-if="error && comments.length === 0"
@@ -33,31 +122,6 @@
       </p>
     </div>
     <div v-else id="comment-section-list">
-      <div
-        v-if="comments.length > 1"
-        id="comment-section-sort"
-        role="group"
-        :aria-label="msg.section.sortGroupLabel"
-        class="mb-2 flex flex-wrap items-center justify-end gap-1"
-      >
-        <span
-          id="comment-section-sort-label"
-          class="mr-1 text-sm text-(--comment-text-muted)"
-          >{{ msg.section.sortLabel }}</span
-        >
-        <button
-          v-for="order in sortOptions"
-          :id="`comment-section-sort-${order}`"
-          :key="order"
-          type="button"
-          class="cmt-action"
-          :class="{ 'cmt-action--active': sortOrder === order }"
-          :aria-pressed="sortOrder === order"
-          @click="tree.setSortOrder(order)"
-        >
-          {{ msg.section.sort[order] }}
-        </button>
-      </div>
       <CommentNode
         v-for="comment in visibleComments"
         :key="comment.id"
@@ -102,6 +166,7 @@ import {
   onBeforeUnmount,
   onMounted,
   provide,
+  reactive,
   ref,
   useSlots,
 } from "vue";
@@ -119,6 +184,7 @@ import {
   type CommentTree,
   useCommentTree,
 } from "../composables/useCommentTree";
+import { useDismissableMenu } from "../composables/useDismissableMenu";
 import { resolveCommentMessages } from "../locales";
 import CommentForm from "./CommentForm.vue";
 import CommentIcon from "./CommentIcon.vue";
@@ -126,6 +192,7 @@ import CommentNode from "./CommentNode.vue";
 import {
   COMMENT_SECTION_CONTEXT,
   type CommentNotification,
+  type ReplyDraft,
   type TransformImageUrl,
 } from "./context";
 
@@ -227,6 +294,24 @@ const sortOptions: readonly CommentSortOrder[] = [
 
 const msg = messages;
 
+const sortMenuRef = ref<HTMLElement | null>(null);
+const {
+  isOpen: isSortMenuOpen,
+  toggle: toggleSortMenu,
+  close: closeSortMenu,
+} = useDismissableMenu(sortMenuRef);
+const chooseSort = (order: CommentSortOrder) => {
+  tree.setSortOrder(order);
+  closeSortMenu();
+};
+
+const activeReplyId = ref<string | null>(null);
+// Cast: reactive() would otherwise unwrap the File fields into a lookalike type.
+const replyDrafts = reactive(new Map<string, ReplyDraft>()) as Map<
+  string,
+  ReplyDraft
+>;
+
 const now = ref(new Date());
 let clock: ReturnType<typeof setInterval> | undefined;
 
@@ -258,6 +343,8 @@ provide(COMMENT_SECTION_CONTEXT, {
   })),
   transformImageUrl: (url, options) => props.transformImageUrl(url, options),
   now,
+  activeReplyId,
+  replyDrafts,
   slots: useSlots(),
   notify: (notification) => emit("notify", notification),
 });

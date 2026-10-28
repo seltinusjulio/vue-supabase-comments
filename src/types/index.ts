@@ -211,6 +211,8 @@ export interface CommentMessages {
     edited: string;
     pending: string;
     pinned: string;
+    continueReply: string;
+    deleted: string;
     deletedForPublic: string;
     edit: string;
     editLabel: string;

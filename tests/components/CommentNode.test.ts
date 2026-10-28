@@ -27,6 +27,13 @@ afterEach(() => {
   document.body.innerHTML = "";
 });
 
+type Wrapper = Awaited<ReturnType<typeof mountSection>>["wrapper"];
+
+/** Opens a comment's "more actions" menu, where owner and moderator actions live. */
+const openActions = async (wrapper: Wrapper, id = "c1") => {
+  await wrapper.find(`#comment-owner-menu-button-${id}`).trigger("click");
+};
+
 const dialog = (id: string) =>
   document.getElementById(`comment-delete-modal-${id}`) as HTMLDialogElement;
 
@@ -37,6 +44,7 @@ describe("CommentNode: delete confirmation", () => {
       viewer: SIGNED_IN,
     });
 
+    await openActions(wrapper);
     await wrapper.find("#comment-delete-button-c1").trigger("click");
 
     expect(dialog("c1").open).toBe(true);
@@ -50,6 +58,7 @@ describe("CommentNode: delete confirmation", () => {
       rows: [own()],
       viewer: SIGNED_IN,
     });
+    await openActions(wrapper);
     await wrapper.find("#comment-delete-button-c1").trigger("click");
 
     await wrapper.find("#comment-delete-cancel-button-c1").trigger("click");
@@ -63,6 +72,7 @@ describe("CommentNode: delete confirmation", () => {
       rows: [own()],
       viewer: SIGNED_IN,
     });
+    await openActions(wrapper);
     await wrapper.find("#comment-delete-button-c1").trigger("click");
 
     dialog("c1").dispatchEvent(new Event("cancel", { cancelable: true }));
@@ -76,6 +86,7 @@ describe("CommentNode: delete confirmation", () => {
       rows: [own()],
       viewer: SIGNED_IN,
     });
+    await openActions(wrapper);
     await wrapper.find("#comment-delete-button-c1").trigger("click");
 
     await wrapper.find("#comment-delete-confirm-button-c1").trigger("click");
@@ -93,6 +104,7 @@ describe("CommentNode: delete confirmation", () => {
       rows: [own()],
       viewer: SIGNED_IN,
     });
+    await openActions(wrapper);
     await wrapper.find("#comment-delete-button-c1").trigger("click");
 
     await wrapper.find("#comment-delete-confirm-button-c1").trigger("click");
@@ -112,10 +124,16 @@ describe("CommentNode: status badges and owner actions", () => {
       viewer: SIGNED_IN,
     });
 
-    expect(wrapper.find("#comment-hidden-badge-c1").text()).toBe(
+    const badge = wrapper.find("#comment-hidden-badge-c1");
+    expect(badge.find("[aria-hidden='true']").text()).toBe("Dihapus");
+    expect(badge.find(".sr-only").text()).toBe(
       "Dihapus, tidak tampil untuk publik",
     );
-    expect(wrapper.find("#comment-owner-actions-c1").exists()).toBe(true);
+    expect(badge.attributes("title")).toBe(
+      "Dihapus, tidak tampil untuk publik",
+    );
+    expect(wrapper.find("#comment-owner-menu-button-c1").exists()).toBe(true);
+    await openActions(wrapper);
     expect(wrapper.find("#comment-edit-button-c1").exists()).toBe(false);
     expect(wrapper.find("#comment-delete-button-c1").exists()).toBe(false);
   });
@@ -129,21 +147,99 @@ describe("CommentNode: status badges and owner actions", () => {
     expect(wrapper.find("#comment-pending-badge-c1").text()).toBe(
       "Menunggu moderasi",
     );
+    await openActions(wrapper);
     expect(wrapper.find("#comment-edit-button-c1").exists()).toBe(false);
     expect(wrapper.find("#comment-delete-button-c1").exists()).toBe(true);
   });
 
-  it("uses labelled icon buttons for owner actions", async () => {
+  it("keeps owner actions in a labelled menu with text buttons", async () => {
     const { wrapper } = await mountSection({
       rows: [own()],
       viewer: SIGNED_IN,
     });
 
+    const menu = wrapper.find("#comment-owner-menu-button-c1");
+    expect(menu.attributes("aria-label")).toBe("Aksi lainnya");
+    expect(menu.attributes("aria-expanded")).toBe("false");
+    expect(wrapper.find("#comment-edit-button-c1").exists()).toBe(false);
+
+    await menu.trigger("click");
+
+    expect(menu.attributes("aria-expanded")).toBe("true");
     const edit = wrapper.find("#comment-edit-button-c1");
     const del = wrapper.find("#comment-delete-button-c1");
-    expect(edit.attributes("aria-label")).toBe("Sunting komentar");
-    expect(del.attributes("aria-label")).toBe("Hapus komentar");
+    expect(edit.text()).toBe("Sunting");
+    expect(del.text()).toBe("Hapus");
     expect(del.classes()).toContain("cmt-action--danger");
+  });
+
+  it("closes the menu on a press outside it but not on one inside", async () => {
+    const { wrapper } = await mountSection({
+      rows: [own()],
+      viewer: SIGNED_IN,
+    });
+    await openActions(wrapper);
+
+    wrapper
+      .find("#comment-owner-menu-c1")
+      .element.dispatchEvent(new Event("pointerdown", { bubbles: true }));
+    await flushPromises();
+    expect(wrapper.find("#comment-owner-menu-c1").exists()).toBe(true);
+
+    document.body.dispatchEvent(new Event("pointerdown", { bubbles: true }));
+    await flushPromises();
+    expect(wrapper.find("#comment-owner-menu-c1").exists()).toBe(false);
+  });
+
+  it("closes the menu on Escape and returns focus to its button", async () => {
+    const { wrapper } = await mountSection({
+      rows: [own()],
+      viewer: SIGNED_IN,
+    });
+    await openActions(wrapper);
+
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+    await flushPromises();
+
+    expect(wrapper.find("#comment-owner-menu-c1").exists()).toBe(false);
+    expect(document.activeElement).toBe(
+      wrapper.find("#comment-owner-menu-button-c1").element,
+    );
+  });
+
+  it("stops listening once the menu is closed", async () => {
+    const add = vi.spyOn(document, "addEventListener");
+    const remove = vi.spyOn(document, "removeEventListener");
+    const { wrapper } = await mountSection({
+      rows: [own()],
+      viewer: SIGNED_IN,
+    });
+    await openActions(wrapper);
+    const added = add.mock.calls.filter(([type]) =>
+      ["pointerdown", "keydown"].includes(type),
+    ).length;
+
+    await wrapper.find("#comment-owner-menu-button-c1").trigger("click");
+
+    const removed = remove.mock.calls.filter(([type]) =>
+      ["pointerdown", "keydown"].includes(type),
+    ).length;
+    expect(added).toBe(2);
+    expect(removed).toBeGreaterThanOrEqual(added);
+    add.mockRestore();
+    remove.mockRestore();
+  });
+
+  it("closes the menu after an action is chosen", async () => {
+    const { wrapper } = await mountSection({
+      rows: [own()],
+      viewer: SIGNED_IN,
+    });
+    await openActions(wrapper);
+
+    await wrapper.find("#comment-edit-button-c1").trigger("click");
+
+    expect(wrapper.find("#comment-owner-menu-c1").exists()).toBe(false);
   });
 
   it("hides owner actions from other users", async () => {
@@ -152,7 +248,7 @@ describe("CommentNode: status badges and owner actions", () => {
       viewer: SIGNED_IN,
     });
 
-    expect(wrapper.find("#comment-owner-actions-c1").exists()).toBe(false);
+    expect(wrapper.find("#comment-owner-menu-button-c1").exists()).toBe(false);
   });
 
   it("only allows editing inside the edit window", async () => {
@@ -161,6 +257,7 @@ describe("CommentNode: status badges and owner actions", () => {
       viewer: SIGNED_IN,
       props: { editWindowMinutes: 15 },
     });
+    await openActions(wrapper);
     expect(wrapper.find("#comment-edit-button-c1").exists()).toBe(true);
 
     vi.advanceTimersByTime(6 * 60_000);
@@ -176,8 +273,36 @@ describe("CommentNode: status badges and owner actions", () => {
       viewer: SIGNED_IN,
       props: { editWindowMinutes: 15 },
     });
+    await openActions(wrapper);
 
     expect(wrapper.find("#comment-edit-button-c1").exists()).toBe(false);
+  });
+});
+
+describe("CommentNode: header layout", () => {
+  it("groups the name and badge apart from the date and status, so narrow screens get two lines", async () => {
+    const { wrapper } = await mountSection({
+      rows: [own({ status: "pending_review" })],
+      viewer: SIGNED_IN,
+      slots: { "author-badge": () => h("span", { id: "badge" }, "Staf") },
+    });
+
+    const [identity, details] = wrapper.findAll("#comment-meta-c1 > div");
+    expect(identity?.find("#comment-author-name-c1").exists()).toBe(true);
+    expect(identity?.find("#badge").exists()).toBe(true);
+    expect(details?.find("#comment-date-c1").exists()).toBe(true);
+    expect(details?.find("#comment-pending-badge-c1").exists()).toBe(true);
+    // From `sm` up both groups dissolve into one wrapping row.
+    expect(identity?.classes()).toContain("sm:contents");
+    expect(details?.classes()).toContain("sm:contents");
+  });
+
+  it("shows the full author name as a tooltip when it is truncated", async () => {
+    const { wrapper } = await mountSection({ rows: [own()] });
+
+    expect(wrapper.find("#comment-author-name-c1").attributes("title")).toBe(
+      "Budi",
+    );
   });
 });
 
@@ -457,6 +582,7 @@ describe("CommentNode: attachments", () => {
 describe("CommentNode: editing", () => {
   const startEditing = async () => {
     const mounted = await mountSection({ rows: [own()], viewer: SIGNED_IN });
+    await openActions(mounted.wrapper);
     await mounted.wrapper.find("#comment-edit-button-c1").trigger("click");
     return mounted;
   };
@@ -468,7 +594,7 @@ describe("CommentNode: editing", () => {
       (wrapper.find("#comment-edit-textarea-c1").element as HTMLTextAreaElement)
         .value,
     ).toBe("Halo");
-    expect(wrapper.find("#comment-owner-actions-c1").exists()).toBe(false);
+    expect(wrapper.find("#comment-owner-menu-button-c1").exists()).toBe(false);
   });
 
   it("cancels without saving", async () => {
@@ -520,6 +646,7 @@ describe("CommentNode: editing", () => {
       viewer: SIGNED_IN,
       props: { maxLength: 2000 },
     });
+    await openActions(wrapper);
     await wrapper.find("#comment-edit-button-c1").trigger("click");
 
     expect(
@@ -678,6 +805,151 @@ describe("CommentNode: replying", () => {
       false,
     );
   });
+
+  describe("with several comments", () => {
+    const mountTwo = () =>
+      mountSection({
+        rows: [item("c1"), item("c2")],
+        viewer: SIGNED_IN,
+      });
+    const open =
+      (wrapper: Awaited<ReturnType<typeof mountTwo>>["wrapper"]) =>
+      (id: string) =>
+        wrapper.find(`#comment-reply-button-${id}`).trigger("click");
+
+    it("keeps one reply form open: opening another closes the first", async () => {
+      const { wrapper } = await mountTwo();
+      const reply = open(wrapper);
+
+      await reply("c1");
+      await reply("c2");
+
+      expect(wrapper.find("#comment-reply-form-container-c1").exists()).toBe(
+        false,
+      );
+      expect(wrapper.find("#comment-reply-form-container-c2").exists()).toBe(
+        true,
+      );
+      expect(
+        wrapper.find("#comment-reply-button-c1").attributes("aria-expanded"),
+      ).toBe("false");
+    });
+
+    it("restores what was typed when a closed reply form is reopened", async () => {
+      const { wrapper } = await mountTwo();
+      const reply = open(wrapper);
+
+      await reply("c1");
+      await wrapper.find("#comment-content-c1").setValue("Belum selesai");
+      await reply("c2");
+      await reply("c1");
+
+      expect(
+        (wrapper.find("#comment-content-c1").element as HTMLTextAreaElement)
+          .value,
+      ).toBe("Belum selesai");
+    });
+
+    it("keeps the draft when the same reply button closes the form", async () => {
+      const { wrapper } = await mountTwo();
+      const reply = open(wrapper);
+
+      await reply("c1");
+      await wrapper.find("#comment-content-c1").setValue("Tunggu");
+      await reply("c1");
+      await reply("c1");
+
+      expect(
+        (wrapper.find("#comment-content-c1").element as HTMLTextAreaElement)
+          .value,
+      ).toBe("Tunggu");
+    });
+
+    it("discards the draft on Batal", async () => {
+      const { wrapper } = await mountTwo();
+      const reply = open(wrapper);
+
+      await reply("c1");
+      await wrapper.find("#comment-content-c1").setValue("Dibuang");
+      await wrapper.find("#comment-form-cancel-button-c1").trigger("click");
+      await reply("c1");
+
+      expect(
+        (wrapper.find("#comment-content-c1").element as HTMLTextAreaElement)
+          .value,
+      ).toBe("");
+    });
+
+    it("clears the draft once the reply is posted", async () => {
+      const { wrapper } = await mountTwo();
+      const reply = open(wrapper);
+
+      await reply("c1");
+      await wrapper.find("#comment-content-c1").setValue("Terkirim");
+      await wrapper.find("#comment-form-c1").trigger("submit");
+      await flushPromises();
+      await reply("c1");
+
+      expect(
+        (wrapper.find("#comment-content-c1").element as HTMLTextAreaElement)
+          .value,
+      ).toBe("");
+    });
+
+    it("reads Lanjutkan balasan on a closed reply form that still holds a draft", async () => {
+      const { wrapper } = await mountTwo();
+      const reply = open(wrapper);
+      const label = (id: string) =>
+        wrapper.find(`#comment-reply-button-${id}`).text();
+
+      expect(label("c1")).toBe("Balas");
+
+      await reply("c1");
+      expect(label("c1")).toBe("Balas");
+
+      await wrapper.find("#comment-content-c1").setValue("Nanti dulu");
+      expect(label("c1")).toBe("Balas");
+
+      await reply("c2");
+      expect(label("c1")).toBe("Lanjutkan balasan");
+      expect(label("c2")).toBe("Balas");
+
+      await reply("c1");
+      expect(label("c1")).toBe("Balas");
+    });
+
+    it("goes back to Balas once a draft is discarded or posted", async () => {
+      const { wrapper } = await mountTwo();
+      const reply = open(wrapper);
+      const label = (id: string) =>
+        wrapper.find(`#comment-reply-button-${id}`).text();
+
+      await reply("c1");
+      await wrapper.find("#comment-content-c1").setValue("Buang");
+      await wrapper.find("#comment-form-cancel-button-c1").trigger("click");
+      expect(label("c1")).toBe("Balas");
+
+      await reply("c2");
+      await wrapper.find("#comment-content-c2").setValue("Kirim");
+      await wrapper.find("#comment-form-c2").trigger("submit");
+      await flushPromises();
+      expect(label("c2")).toBe("Balas");
+    });
+
+    it("does not carry a draft from one comment to another", async () => {
+      const { wrapper } = await mountTwo();
+      const reply = open(wrapper);
+
+      await reply("c1");
+      await wrapper.find("#comment-content-c1").setValue("Untuk c1");
+      await reply("c2");
+
+      expect(
+        (wrapper.find("#comment-content-c2").element as HTMLTextAreaElement)
+          .value,
+      ).toBe("");
+    });
+  });
 });
 
 describe("CommentNode: thread layout", () => {
@@ -719,6 +991,23 @@ describe("CommentNode: thread layout", () => {
     expect(
       wrapper.find("#comment-children-container-d1").classes(),
     ).not.toContain("border-l-2");
+  });
+
+  it("gives replies a smaller avatar and a matching thread indent", async () => {
+    const { wrapper } = await mountSection({ rows: chain(3) });
+
+    expect(wrapper.find("#comment-avatar-container-d0").classes()).toContain(
+      "h-8",
+    );
+    expect(wrapper.find("#comment-avatar-container-d1").classes()).toContain(
+      "h-6",
+    );
+    expect(wrapper.find("#comment-children-container-d0").classes()).toContain(
+      "pl-[27px]",
+    );
+    expect(wrapper.find("#comment-children-container-d1").classes()).toContain(
+      "pl-[23px]",
+    );
   });
 
   it("shows a notice for a removed ancestor and keeps its replies", async () => {
@@ -803,6 +1092,7 @@ describe("CommentNode: moderation actions", () => {
       viewer: { ...SIGNED_IN, canModerate: true },
     });
 
+    await openActions(wrapper);
     const approveBtn = wrapper.find("#comment-approve-button-c1");
     expect(approveBtn.exists()).toBe(true);
 
@@ -830,6 +1120,7 @@ describe("CommentNode: moderation actions", () => {
       viewer: { ...SIGNED_IN, canModerate: true },
     });
 
+    await openActions(wrapper);
     const approveBtn = wrapper.find("#comment-approve-button-c1");
     await approveBtn.trigger("click");
     await flushPromises();
@@ -849,6 +1140,7 @@ describe("CommentNode: moderation actions", () => {
       props: { enablePinning: true },
     });
 
+    await openActions(wrapper);
     const pinBtn = wrapper.find("#comment-pin-button-c1");
     expect(pinBtn.exists()).toBe(true);
 
@@ -868,6 +1160,7 @@ describe("CommentNode: moderation actions", () => {
       props: { enablePinning: true },
     });
 
+    await openActions(wrapper);
     const pinBtn = wrapper.find("#comment-pin-button-c1");
     await pinBtn.trigger("click");
     await flushPromises();
@@ -891,6 +1184,8 @@ describe("CommentNode: moderation actions", () => {
       props: { enablePinning: true },
     });
 
+    await openActions(wrapper, "root");
+    await openActions(wrapper, "reply");
     expect(wrapper.find("#comment-pin-button-root").exists()).toBe(true);
     expect(wrapper.find("#comment-pin-button-reply").exists()).toBe(false);
     expect(wrapper.find("#comment-pinned-badge-reply").exists()).toBe(false);

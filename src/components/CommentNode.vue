@@ -7,427 +7,476 @@
         : 'pt-4'
     "
   >
-    <p
-      v-if="comment.isRemoved"
-      :id="`comment-removed-${comment.id}`"
-      class="py-1 text-sm text-(--comment-text-muted) italic"
-    >
-      {{ msg.node.removed }}
-    </p>
-    <template v-else>
+    <!-- Two columns: the avatar on the left, everything else aligned with
+         the author name on the right. -->
+    <div :id="`comment-body-${comment.id}`" class="flex gap-3">
       <div
-        :id="`comment-header-${comment.id}`"
-        class="flex items-start justify-between gap-2"
-        :class="{ 'opacity-60': isHidden }"
+        :id="`comment-avatar-container-${comment.id}`"
+        class="flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-(--comment-surface)"
+        :class="[avatarSizeClass, { 'opacity-60': isHidden }]"
       >
-        <div
-          :id="`comment-author-info-${comment.id}`"
-          class="flex min-w-0 items-center"
-        >
-          <div
-            :id="`comment-avatar-container-${comment.id}`"
-            class="mr-3 flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-(--comment-surface)"
-          >
-            <img
-              v-if="avatarSrc && !avatarFailed"
-              :id="`comment-avatar-${comment.id}`"
-              :src="avatarSrc"
-              :alt="msg.node.avatarAlt"
-              class="h-full w-full object-cover"
-              loading="lazy"
-              width="32"
-              height="32"
-              @error="onAvatarError"
-            />
-            <CommentAvatarFallback
-              v-else
-              :id="`comment-avatar-fallback-${comment.id}`"
-              :name="knownName"
-            />
-          </div>
-          <div
-            :id="`comment-meta-${comment.id}`"
-            class="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1"
-          >
-            <span
-              :id="`comment-author-name-${comment.id}`"
-              class="truncate font-semibold text-(--comment-heading)"
-              >{{ authorName }}</span
-            >
-            <SlotOutlet
-              v-if="ctx.slots['author-badge'] && comment.author"
-              :render="ctx.slots['author-badge']"
-              :slot-props="{ author: comment.author, comment }"
-            />
-            <time
-              :id="`comment-date-${comment.id}`"
-              :datetime="comment.created_at ?? undefined"
-              :title="absoluteDate"
-              class="text-xs text-(--comment-text-muted)"
-              >{{ relativeDate }}</time
-            >
-            <span
-              v-if="
-                comment.updated_at && comment.updated_at !== comment.created_at
-              "
-              :id="`comment-edited-${comment.id}`"
-              class="text-xs text-(--comment-text-muted) italic"
-              >{{ msg.node.edited }}</span
-            >
-            <span
-              v-if="features.pinning && comment.is_pinned && level === 0"
-              :id="`comment-pinned-badge-${comment.id}`"
-              class="cmt-badge cmt-badge--primary"
-              >{{ msg.node.pinned }}</span
-            >
-            <span
-              v-if="isPending"
-              :id="`comment-pending-badge-${comment.id}`"
-              class="cmt-badge cmt-badge--warning"
-              >{{ msg.node.pending }}</span
-            >
-            <span
-              v-if="isHidden"
-              :id="`comment-hidden-badge-${comment.id}`"
-              class="cmt-badge cmt-badge--danger"
-              >{{ msg.node.deletedForPublic }}</span
-            >
-          </div>
-        </div>
+        <template v-if="!comment.isRemoved">
+          <img
+            v-if="avatarSrc && !avatarFailed"
+            :id="`comment-avatar-${comment.id}`"
+            :src="avatarSrc"
+            :alt="msg.node.avatarAlt"
+            class="h-full w-full object-cover"
+            loading="lazy"
+            :width="avatarSize"
+            :height="avatarSize"
+            @error="onAvatarError"
+          />
+          <CommentAvatarFallback
+            v-else
+            :id="`comment-avatar-fallback-${comment.id}`"
+            :name="knownName"
+          />
+        </template>
+      </div>
 
-        <!-- Owner & Moderator actions, collapsed into one menu -->
-        <div
-          v-if="(isOwner || canModerate) && !isEditing"
-          class="relative -mt-1 -mr-2 ml-auto"
+      <div :id="`comment-main-${comment.id}`" class="min-w-0 flex-1">
+        <p
+          v-if="comment.isRemoved"
+          :id="`comment-removed-${comment.id}`"
+          class="flex items-center text-sm text-(--comment-text-muted) italic"
+          :class="headerHeightClass"
         >
-          <button
-            :id="`comment-owner-menu-button-${comment.id}`"
-            type="button"
-            class="cmt-action"
-            :aria-expanded="showOwnerMenu"
-            :aria-label="msg.node.moreActions"
-            :title="msg.node.moreActions"
-            @click="showOwnerMenu = !showOwnerMenu"
+          {{ msg.node.removed }}
+        </p>
+        <template v-else>
+          <div
+            :id="`comment-header-${comment.id}`"
+            class="flex items-start justify-between gap-2"
+            :class="{ 'opacity-60': isHidden }"
           >
-            <CommentIcon name="more" class="h-4 w-4" />
-          </button>
-          <template v-if="showOwnerMenu">
-            <div class="fixed inset-0 z-10" @click="showOwnerMenu = false" />
             <div
-              :id="`comment-owner-menu-${comment.id}`"
-              class="absolute right-0 top-full z-20 mt-1 flex min-w-40 flex-col rounded-lg border border-(--comment-border) bg-(--comment-bg) py-1 shadow-lg"
+              :id="`comment-meta-${comment.id}`"
+              class="flex min-w-0 flex-col justify-center gap-y-0.5 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-2"
+              :class="headerHeightClass"
+            >
+              <!-- Narrow screens: the name and role badge on one line, the
+                   date and status on the next, at every reply level. From
+                   `sm` up the groups dissolve into a single wrapping row. -->
+              <div class="flex min-w-0 items-center gap-x-2 sm:contents">
+                <span
+                  :id="`comment-author-name-${comment.id}`"
+                  :title="authorName"
+                  class="truncate font-semibold text-(--comment-heading)"
+                  >{{ authorName }}</span
+                >
+                <SlotOutlet
+                  v-if="ctx.slots['author-badge'] && comment.author"
+                  :render="ctx.slots['author-badge']"
+                  :slot-props="{ author: comment.author, comment }"
+                />
+              </div>
+              <div
+                class="flex flex-wrap items-center gap-x-2 gap-y-0.5 sm:contents"
+              >
+                <time
+                  :id="`comment-date-${comment.id}`"
+                  :datetime="comment.created_at ?? undefined"
+                  :title="absoluteDate"
+                  class="text-xs text-(--comment-text-muted)"
+                  >{{ relativeDate }}</time
+                >
+                <span
+                  v-if="
+                    comment.updated_at &&
+                    comment.updated_at !== comment.created_at
+                  "
+                  :id="`comment-edited-${comment.id}`"
+                  class="text-xs text-(--comment-text-muted) italic"
+                  >{{ msg.node.edited }}</span
+                >
+                <!-- Muted like the date, so status badges keep the colour. -->
+                <span
+                  v-if="features.pinning && comment.is_pinned && level === 0"
+                  :id="`comment-pinned-badge-${comment.id}`"
+                  class="inline-flex items-center gap-1 text-xs text-(--comment-text-muted)"
+                >
+                  <CommentIcon name="pin" class="h-3.5 w-3.5" />
+                  <span>{{ msg.node.pinned }}</span>
+                </span>
+                <span
+                  v-if="isPending"
+                  :id="`comment-pending-badge-${comment.id}`"
+                  class="cmt-badge cmt-badge--warning"
+                  >{{ msg.node.pending }}</span
+                >
+                <!-- Short on screen; the full explanation is the tooltip and what
+                     screen readers read. -->
+                <span
+                  v-if="isHidden"
+                  :id="`comment-hidden-badge-${comment.id}`"
+                  :title="msg.node.deletedForPublic"
+                  class="cmt-badge cmt-badge--danger"
+                >
+                  <span aria-hidden="true">{{ msg.node.deleted }}</span>
+                  <span class="sr-only">{{ msg.node.deletedForPublic }}</span>
+                </span>
+              </div>
+            </div>
+
+            <!-- Owner & Moderator actions, collapsed into one menu -->
+            <div
+              v-if="(isOwner || canModerate) && !isEditing"
+              ref="ownerMenuRef"
+              class="relative -mr-2 ml-auto"
+              :class="{ '-my-1': level > 0 }"
             >
               <button
-                v-if="canModerate && isPending"
-                :id="`comment-approve-button-${comment.id}`"
+                :id="`comment-owner-menu-button-${comment.id}`"
                 type="button"
-                class="cmt-action justify-start rounded-none"
-                :disabled="isModerating"
-                @click="showOwnerMenu = false; handleApprove()"
+                class="cmt-action"
+                :aria-expanded="showOwnerMenu"
+                :aria-label="msg.node.moreActions"
+                :title="msg.node.moreActions"
+                @click="showOwnerMenu = !showOwnerMenu"
               >
-                <CommentIcon name="check" class="h-4 w-4" />
-                <span>{{ msg.moderation.approve }}</span>
+                <CommentIcon name="more" class="h-4 w-4" />
+              </button>
+              <template v-if="showOwnerMenu">
+                <div
+                  :id="`comment-owner-menu-${comment.id}`"
+                  class="absolute top-full right-0 z-20 mt-1 flex min-w-40 flex-col rounded-lg border border-(--comment-border) bg-(--comment-bg) py-1 shadow-lg"
+                >
+                  <button
+                    v-if="canModerate && isPending"
+                    :id="`comment-approve-button-${comment.id}`"
+                    type="button"
+                    class="cmt-action justify-start rounded-none"
+                    :disabled="isModerating"
+                    @click="
+                      showOwnerMenu = false;
+                      handleApprove();
+                    "
+                  >
+                    <CommentIcon name="check" class="h-4 w-4" />
+                    <span>{{ msg.moderation.approve }}</span>
+                  </button>
+                  <button
+                    v-if="features.pinning && canModerate && level === 0"
+                    :id="`comment-pin-button-${comment.id}`"
+                    type="button"
+                    class="cmt-action justify-start rounded-none"
+                    :class="{ 'cmt-action--active': comment.is_pinned }"
+                    :disabled="isPinning"
+                    @click="
+                      showOwnerMenu = false;
+                      handleTogglePin();
+                    "
+                  >
+                    <CommentIcon name="pin" class="h-4 w-4" />
+                    <span>{{
+                      comment.is_pinned
+                        ? msg.moderation.unpin
+                        : msg.moderation.pin
+                    }}</span>
+                  </button>
+                  <button
+                    v-if="canEdit"
+                    :id="`comment-edit-button-${comment.id}`"
+                    type="button"
+                    class="cmt-action justify-start rounded-none"
+                    @click="
+                      showOwnerMenu = false;
+                      startEdit();
+                    "
+                  >
+                    <CommentIcon name="pencil" class="h-4 w-4" />
+                    <span>{{ msg.node.edit }}</span>
+                  </button>
+                  <button
+                    v-if="canDelete"
+                    :id="`comment-delete-button-${comment.id}`"
+                    type="button"
+                    class="cmt-action cmt-action--danger justify-start rounded-none"
+                    @click="
+                      showOwnerMenu = false;
+                      showDeleteConfirm = true;
+                    "
+                  >
+                    <CommentIcon name="trash" class="h-4 w-4" />
+                    <span>{{ msg.common.delete }}</span>
+                  </button>
+                </div>
+              </template>
+            </div>
+
+            <CommentDialog
+              v-if="canDelete"
+              :id="`comment-delete-modal-${comment.id}`"
+              :open="showDeleteConfirm"
+              :labelledby="`comment-delete-modal-title-${comment.id}`"
+              @close="closeDeleteConfirm"
+            >
+              <div class="border-b border-(--comment-border) p-4">
+                <h2
+                  :id="`comment-delete-modal-title-${comment.id}`"
+                  class="text-lg font-bold text-(--comment-heading)"
+                >
+                  {{ msg.node.deleteTitle }}
+                </h2>
+              </div>
+              <div class="p-6">
+                <p>{{ msg.node.deleteConfirm }}</p>
+              </div>
+              <div
+                class="flex justify-end gap-3 border-t border-(--comment-border) p-4"
+              >
+                <button
+                  :id="`comment-delete-cancel-button-${comment.id}`"
+                  type="button"
+                  class="cmt-btn cmt-btn--secondary"
+                  :disabled="isDeleting"
+                  @click="closeDeleteConfirm"
+                >
+                  {{ msg.common.cancel }}
+                </button>
+                <button
+                  :id="`comment-delete-confirm-button-${comment.id}`"
+                  type="button"
+                  class="cmt-btn cmt-btn--danger"
+                  :disabled="isDeleting"
+                  @click="handleDelete"
+                >
+                  {{ isDeleting ? msg.node.deleting : msg.common.delete }}
+                </button>
+              </div>
+            </CommentDialog>
+          </div>
+
+          <!-- Edit mode -->
+          <div
+            v-if="isEditing"
+            :id="`comment-edit-container-${comment.id}`"
+            class="mt-2"
+          >
+            <textarea
+              :id="`comment-edit-textarea-${comment.id}`"
+              v-model="editContent"
+              :aria-label="msg.node.editLabel"
+              :maxlength="features.maxLength ?? undefined"
+              rows="3"
+              class="cmt-input"
+            ></textarea>
+            <div
+              :id="`comment-edit-buttons-${comment.id}`"
+              class="mt-2 flex gap-2"
+            >
+              <button
+                :id="`comment-save-edit-${comment.id}`"
+                type="button"
+                class="cmt-btn cmt-btn--primary"
+                :disabled="!editContent.trim() || isSaving"
+                @click="handleSave"
+              >
+                {{ isSaving ? msg.node.saving : msg.node.save }}
               </button>
               <button
-                v-if="features.pinning && canModerate && level === 0"
-                :id="`comment-pin-button-${comment.id}`"
+                :id="`comment-cancel-edit-${comment.id}`"
                 type="button"
-                class="cmt-action justify-start rounded-none"
-                :class="{ 'cmt-action--active': comment.is_pinned }"
-                :disabled="isPinning"
-                @click="showOwnerMenu = false; handleTogglePin()"
+                class="cmt-btn cmt-btn--secondary"
+                @click="cancelEdit"
               >
-                <CommentIcon name="pin" class="h-4 w-4" />
-                <span>{{
-                  comment.is_pinned ? msg.moderation.unpin : msg.moderation.pin
-                }}</span>
-              </button>
-              <button
-                v-if="canEdit"
-                :id="`comment-edit-button-${comment.id}`"
-                type="button"
-                class="cmt-action justify-start rounded-none"
-                @click="showOwnerMenu = false; startEdit()"
-              >
-                <CommentIcon name="pencil" class="h-4 w-4" />
-                <span>{{ msg.node.edit }}</span>
-              </button>
-              <button
-                v-if="canDelete"
-                :id="`comment-delete-button-${comment.id}`"
-                type="button"
-                class="cmt-action cmt-action--danger justify-start rounded-none"
-                @click="showOwnerMenu = false; showDeleteConfirm = true"
-              >
-                <CommentIcon name="trash" class="h-4 w-4" />
-                <span>{{ msg.common.delete }}</span>
+                {{ msg.common.cancel }}
               </button>
             </div>
-          </template>
-        </div>
+          </div>
 
-        <CommentDialog
-          v-if="canDelete"
-          :id="`comment-delete-modal-${comment.id}`"
-          :open="showDeleteConfirm"
-          :labelledby="`comment-delete-modal-title-${comment.id}`"
-          @close="closeDeleteConfirm"
-        >
-          <div class="border-b border-(--comment-border) p-4">
-            <h2
-              :id="`comment-delete-modal-title-${comment.id}`"
-              class="text-lg font-bold text-(--comment-heading)"
-            >
-              {{ msg.node.deleteTitle }}
-            </h2>
-          </div>
-          <div class="p-6">
-            <p>{{ msg.node.deleteConfirm }}</p>
-          </div>
           <div
-            class="flex justify-end gap-3 border-t border-(--comment-border) p-4"
+            v-else
+            :id="`comment-content-container-${comment.id}`"
+            class="mt-0.5 text-(--comment-text)"
+            :class="{ 'opacity-60': isHidden }"
           >
-            <button
-              :id="`comment-delete-cancel-button-${comment.id}`"
-              type="button"
-              class="cmt-btn cmt-btn--secondary"
-              :disabled="isDeleting"
-              @click="closeDeleteConfirm"
+            <!-- Plain text interpolation only (never v-html), so no sanitizer is needed. -->
+            <p
+              :id="`comment-text-${comment.id}`"
+              class="leading-relaxed break-words whitespace-pre-line"
             >
-              {{ msg.common.cancel }}
-            </button>
-            <button
-              :id="`comment-delete-confirm-button-${comment.id}`"
-              type="button"
-              class="cmt-btn cmt-btn--danger"
-              :disabled="isDeleting"
-              @click="handleDelete"
+              {{ comment.content }}
+            </p>
+            <div
+              v-if="comment.image_upload_url && !attachmentFailed"
+              :id="`comment-image-container-${comment.id}`"
+              class="mt-2 aspect-square w-full max-w-64 overflow-hidden rounded-lg bg-(--comment-surface)"
+              :class="{
+                'animate-pulse motion-reduce:animate-none': !attachmentLoaded,
+              }"
             >
-              {{ isDeleting ? msg.node.deleting : msg.common.delete }}
-            </button>
+              <button
+                :id="`comment-image-open-button-${comment.id}`"
+                type="button"
+                class="cmt-focus block h-full w-full cursor-zoom-in"
+                :aria-label="msg.node.enlargeAttachment"
+                @click="openViewer"
+              >
+                <img
+                  :id="`comment-image-attachment-${comment.id}`"
+                  :src="attachmentSrc"
+                  :alt="msg.node.attachmentAlt"
+                  class="h-full w-full object-cover transition-opacity duration-300"
+                  :class="attachmentLoaded ? 'opacity-100' : 'opacity-0'"
+                  loading="lazy"
+                  @load="attachmentLoaded = true"
+                  @error="onAttachmentError"
+                />
+              </button>
+            </div>
+            <a
+              v-if="fileHref"
+              :id="`comment-file-attachment-${comment.id}`"
+              :href="fileHref"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="mt-2 inline-flex items-center gap-1.5 text-sm text-(--comment-primary) hover:underline"
+            >
+              <CommentIcon name="paperclip" class="h-4 w-4 shrink-0" />
+              <span>{{ msg.node.downloadAttachment }}</span>
+            </a>
           </div>
-        </CommentDialog>
-      </div>
 
-      <!-- Edit mode -->
-      <div
-        v-if="isEditing"
-        :id="`comment-edit-container-${comment.id}`"
-        class="mt-2"
-      >
-        <textarea
-          :id="`comment-edit-textarea-${comment.id}`"
-          v-model="editContent"
-          :aria-label="msg.node.editLabel"
-          :maxlength="features.maxLength ?? undefined"
-          rows="3"
-          class="cmt-input"
-        ></textarea>
-        <div :id="`comment-edit-buttons-${comment.id}`" class="mt-2 flex gap-2">
-          <button
-            :id="`comment-save-edit-${comment.id}`"
-            type="button"
-            class="cmt-btn cmt-btn--primary"
-            :disabled="!editContent.trim() || isSaving"
-            @click="handleSave"
-          >
-            {{ isSaving ? msg.node.saving : msg.node.save }}
-          </button>
-          <button
-            :id="`comment-cancel-edit-${comment.id}`"
-            type="button"
-            class="cmt-btn cmt-btn--secondary"
-            @click="cancelEdit"
-          >
-            {{ msg.common.cancel }}
-          </button>
-        </div>
-      </div>
-
-      <div
-        v-else
-        :id="`comment-content-container-${comment.id}`"
-        class="mt-2 text-(--comment-text)"
-        :class="{ 'opacity-60': isHidden }"
-      >
-        <!-- Plain text interpolation only (never v-html), so no sanitizer is needed. -->
-        <p
-          :id="`comment-text-${comment.id}`"
-          class="leading-relaxed break-words whitespace-pre-line"
-        >
-          {{ comment.content }}
-        </p>
-        <div
-          v-if="comment.image_upload_url && !attachmentFailed"
-          :id="`comment-image-container-${comment.id}`"
-          class="mt-2 aspect-square w-full max-w-64 overflow-hidden rounded-lg bg-(--comment-surface)"
-          :class="{
-            'animate-pulse motion-reduce:animate-none': !attachmentLoaded,
-          }"
-        >
-          <button
-            :id="`comment-image-open-button-${comment.id}`"
-            type="button"
-            class="cmt-focus block h-full w-full cursor-zoom-in"
-            :aria-label="msg.node.enlargeAttachment"
-            @click="openViewer"
-          >
-            <img
-              :id="`comment-image-attachment-${comment.id}`"
-              :src="attachmentSrc"
-              :alt="msg.node.attachmentAlt"
-              class="h-full w-full object-cover transition-opacity duration-300"
-              :class="attachmentLoaded ? 'opacity-100' : 'opacity-0'"
-              loading="lazy"
-              @load="attachmentLoaded = true"
-              @error="onAttachmentError"
+          <template v-if="comment.image_upload_url && viewerMounted">
+            <SlotOutlet
+              v-if="ctx.slots['image-viewer']"
+              :render="ctx.slots['image-viewer']"
+              :slot-props="{
+                src: comment.image_upload_url,
+                alt: msg.node.attachmentAlt,
+                open: showViewer,
+                close: closeViewer,
+              }"
             />
-          </button>
-        </div>
-        <a
-          v-if="fileHref"
-          :id="`comment-file-attachment-${comment.id}`"
-          :href="fileHref"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="mt-2 inline-flex items-center gap-1.5 text-sm text-(--comment-primary) hover:underline"
-        >
-          <CommentIcon name="paperclip" class="h-4 w-4 shrink-0" />
-          <span>{{ msg.node.downloadAttachment }}</span>
-        </a>
-      </div>
+            <CommentImageViewer
+              v-else
+              :id="`comment-image-lightbox-${comment.id}`"
+              :open="showViewer"
+              :src="comment.image_upload_url"
+              :alt="msg.node.attachmentAlt"
+              :close-label="msg.node.closeImage"
+              @close="closeViewer"
+            />
+          </template>
 
-      <template v-if="comment.image_upload_url && viewerMounted">
-        <SlotOutlet
-          v-if="ctx.slots['image-viewer']"
-          :render="ctx.slots['image-viewer']"
-          :slot-props="{
-            src: comment.image_upload_url,
-            alt: msg.node.attachmentAlt,
-            open: showViewer,
-            close: closeViewer,
-          }"
-        />
-        <CommentImageViewer
-          v-else
-          :id="`comment-image-lightbox-${comment.id}`"
-          :open="showViewer"
-          :src="comment.image_upload_url"
-          :alt="msg.node.attachmentAlt"
-          :close-label="msg.node.closeImage"
-          @close="closeViewer"
-        />
-      </template>
-
-      <div
-        :id="`comment-footer-${comment.id}`"
-        class="mt-1 -ml-2 flex items-center gap-1"
-        :class="{ 'opacity-60': isHidden }"
-      >
-        <button
-          :id="`comment-reply-button-${comment.id}`"
-          type="button"
-          class="cmt-action"
-          :aria-expanded="isReplying"
-          @click="isReplying = !isReplying"
-        >
-          <CommentIcon name="message" class="h-4 w-4" />
-          <span>{{ msg.common.reply }}</span>
-        </button>
-
-        <template v-if="features.voting">
-          <button
-            :id="`comment-upvote-button-${comment.id}`"
-            type="button"
-            class="cmt-action"
-            :class="{ 'cmt-action--active': myVote === 'up' }"
-            :disabled="isVoting"
-            :aria-pressed="myVote === 'up'"
-            :aria-label="msg.node.like"
-            :title="canVote ? msg.node.like : msg.node.loginToVote"
-            @click="handleVote('up')"
+          <div
+            :id="`comment-footer-${comment.id}`"
+            class="mt-1 -ml-2 flex items-center gap-1"
+            :class="{ 'opacity-60': isHidden }"
           >
-            <CommentIcon name="arrow-up" class="h-4 w-4" />
-            <span
-              v-if="comment.upvote_count > 0"
-              :id="`comment-upvote-count-${comment.id}`"
-              >{{ comment.upvote_count }}</span
+            <button
+              :id="`comment-reply-button-${comment.id}`"
+              type="button"
+              class="cmt-action"
+              :class="{ 'text-(--comment-primary)': hasReplyDraft }"
+              :aria-expanded="isReplying"
+              @click="toggleReply"
             >
-          </button>
-          <button
-            :id="`comment-downvote-button-${comment.id}`"
-            type="button"
-            class="cmt-action"
-            :class="{ 'cmt-action--active-danger': myVote === 'down' }"
-            :disabled="isVoting"
-            :aria-pressed="myVote === 'down'"
-            :aria-label="msg.node.dislike"
-            :title="canVote ? msg.node.dislike : msg.node.loginToVote"
-            @click="handleVote('down')"
+              <CommentIcon name="message" class="h-4 w-4" />
+              <span>{{
+                hasReplyDraft ? msg.node.continueReply : msg.common.reply
+              }}</span>
+            </button>
+
+            <template v-if="features.voting">
+              <button
+                :id="`comment-upvote-button-${comment.id}`"
+                type="button"
+                class="cmt-action"
+                :class="{ 'cmt-action--active': myVote === 'up' }"
+                :disabled="isVoting"
+                :aria-pressed="myVote === 'up'"
+                :aria-label="msg.node.like"
+                :title="canVote ? msg.node.like : msg.node.loginToVote"
+                @click="handleVote('up')"
+              >
+                <CommentIcon name="arrow-up" class="h-4 w-4" />
+                <span
+                  v-if="comment.upvote_count > 0"
+                  :id="`comment-upvote-count-${comment.id}`"
+                  >{{ comment.upvote_count }}</span
+                >
+              </button>
+              <button
+                :id="`comment-downvote-button-${comment.id}`"
+                type="button"
+                class="cmt-action"
+                :class="{ 'cmt-action--active-danger': myVote === 'down' }"
+                :disabled="isVoting"
+                :aria-pressed="myVote === 'down'"
+                :aria-label="msg.node.dislike"
+                :title="canVote ? msg.node.dislike : msg.node.loginToVote"
+                @click="handleVote('down')"
+              >
+                <CommentIcon name="arrow-down" class="h-4 w-4" />
+                <span
+                  v-if="comment.downvote_count > 0"
+                  :id="`comment-downvote-count-${comment.id}`"
+                  >{{ comment.downvote_count }}</span
+                >
+              </button>
+            </template>
+
+            <SlotOutlet
+              v-if="ctx.slots['comment-actions']"
+              :render="ctx.slots['comment-actions']"
+              :slot-props="{ comment }"
+            />
+          </div>
+
+          <div
+            v-if="isReplying"
+            :id="`comment-reply-form-container-${comment.id}`"
+            class="mt-3"
           >
-            <CommentIcon name="arrow-down" class="h-4 w-4" />
-            <span
-              v-if="comment.downvote_count > 0"
-              :id="`comment-downvote-count-${comment.id}`"
-              >{{ comment.downvote_count }}</span
-            >
-          </button>
+            <CommentForm
+              :parent-comment-id="comment.id"
+              :reply-to-name="authorName"
+              @cancel="cancelReply"
+              @success="onReplySuccess"
+            />
+          </div>
         </template>
 
-        <SlotOutlet
-          v-if="ctx.slots['comment-actions']"
-          :render="ctx.slots['comment-actions']"
-          :slot-props="{ comment }"
-        />
-
+        <!-- Long threads start collapsed behind a toggle -->
+        <button
+          v-if="isLongThread"
+          :id="`comment-replies-toggle-${comment.id}`"
+          type="button"
+          class="cmt-action mt-1 -ml-2"
+          :aria-expanded="repliesExpanded"
+          :aria-controls="
+            repliesExpanded
+              ? `comment-children-container-${comment.id}`
+              : undefined
+          "
+          @click="repliesExpanded = !repliesExpanded"
+        >
+          <CommentIcon
+            name="chevron-up"
+            class="h-4 w-4 transition-transform"
+            :class="{ 'rotate-180': !repliesExpanded }"
+          />
+          <span>{{
+            repliesExpanded
+              ? msg.node.hideReplies
+              : msg.node.showReplies(replyCount)
+          }}</span>
+        </button>
       </div>
+    </div>
 
-      <div
-        v-if="isReplying"
-        :id="`comment-reply-form-container-${comment.id}`"
-        class="mt-3"
-      >
-        <CommentForm
-          :parent-comment-id="comment.id"
-          :reply-to-name="authorName"
-          @cancel="isReplying = false"
-          @success="onReplySuccess"
-        />
-      </div>
-    </template>
-
-    <!-- Long threads start collapsed behind a toggle -->
-    <button
-      v-if="isLongThread"
-      :id="`comment-replies-toggle-${comment.id}`"
-      type="button"
-      class="cmt-action mt-1 -ml-2"
-      :aria-expanded="repliesExpanded"
-      :aria-controls="
-        repliesExpanded ? `comment-children-container-${comment.id}` : undefined
-      "
-      @click="repliesExpanded = !repliesExpanded"
-    >
-      <CommentIcon
-        name="chevron-up"
-        class="h-4 w-4 transition-transform"
-        :class="{ 'rotate-180': !repliesExpanded }"
-      />
-      <span>{{
-        repliesExpanded
-          ? msg.node.hideReplies
-          : msg.node.showReplies(replyCount)
-      }}</span>
-    </button>
-
-    <!-- Replies hang off a thread line under the avatar. Past maxDepth
-         levels they stay flat so text keeps a usable width. -->
+    <!-- Replies hang off a thread line under the avatar, and each reply's
+         avatar lines up with this comment's text. Past maxDepth levels they
+         stay flat so text keeps a usable width. -->
     <div
       v-if="showReplies"
       :id="`comment-children-container-${comment.id}`"
       :class="
         level < features.maxDepth
-          ? 'mt-1 ml-4 border-l-2 border-(--comment-border) pl-3 sm:pl-4'
+          ? ['border-l-2 border-(--comment-border)', threadIndentClass]
           : ''
       "
     >
@@ -447,6 +496,7 @@ import { computed, ref } from "vue";
 
 import type { CommentTreeNode, VoteType } from "../types";
 
+import { useDismissableMenu } from "../composables/useDismissableMenu";
 import { formatDateTime, formatRelativeTime } from "../utils/time";
 import { safeLinkUrl } from "../utils/url";
 import CommentAvatarFallback from "./CommentAvatarFallback.vue";
@@ -477,7 +527,35 @@ const msg = computed(() => ctx.messages.value);
 const features = computed(() => ctx.features.value);
 const viewer = computed(() => ctx.tree.viewer.value);
 
-const isReplying = ref(false);
+// Replies get a smaller avatar. Class names stay literal so Tailwind sees them.
+const isReply = computed(() => props.level > 0);
+const avatarSize = computed(() => (isReply.value ? 24 : 32));
+const avatarSizeClass = computed(() => (isReply.value ? "h-6 w-6" : "h-8 w-8"));
+// The header is at least as tall as the avatar, so a one-line header is
+// centred on it.
+const headerHeightClass = computed(() =>
+  isReply.value ? "min-h-6" : "min-h-8",
+);
+// Puts the 2px thread line under the avatar's centre and the replies'
+// avatars in line with the text column (avatar + 12px gap).
+const threadIndentClass = computed(() =>
+  isReply.value ? "ml-[11px] pl-[23px]" : "ml-[15px] pl-[27px]",
+);
+
+// Only one reply form is open at a time: it is whichever the section says.
+// Closing one by opening another keeps its draft; Batal discards it.
+const isReplying = computed(() => ctx.activeReplyId.value === props.comment.id);
+// A closed reply form that still holds an unsent draft offers to continue it.
+const hasReplyDraft = computed(
+  () => !isReplying.value && ctx.replyDrafts.has(props.comment.id),
+);
+const toggleReply = () => {
+  ctx.activeReplyId.value = isReplying.value ? null : props.comment.id;
+};
+const cancelReply = () => {
+  ctx.replyDrafts.delete(props.comment.id);
+  ctx.activeReplyId.value = null;
+};
 const repliesExpanded = ref(false);
 // Not reset via a watcher: nodes are keyed by comment id, so an instance never
 // switches to another comment, and editing only changes `content`.
@@ -494,7 +572,8 @@ const editContent = ref("");
 const isSaving = ref(false);
 const isVoting = ref(false);
 const showDeleteConfirm = ref(false);
-const showOwnerMenu = ref(false);
+const ownerMenuRef = ref<HTMLElement | null>(null);
+const { isOpen: showOwnerMenu } = useDismissableMenu(ownerMenuRef);
 const isDeleting = ref(false);
 const isModerating = ref(false);
 const isPinning = ref(false);
@@ -518,7 +597,7 @@ const showReplies = computed(
 
 // A reply posted into a collapsed thread would otherwise stay out of sight.
 const onReplySuccess = () => {
-  isReplying.value = false;
+  ctx.activeReplyId.value = null;
   repliesExpanded.value = true;
 };
 

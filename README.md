@@ -21,7 +21,7 @@
   - Strict allowlist trigger guarding comment edits and author impersonation.
   - Column-level privilege separation protecting guest contact information (`guest_email`).
 - 🛠️ **Unified Admin Moderation Table:** Included `<CommentModerationTable>` component supporting search, live status counts, batch approval/hiding, pinning, and user bans.
-- 🧩 **Inversion of Control via Slots:** Inject custom author badges (`#author-badge`), authentication CTAs (`#auth-prompt`), custom action menus (`#comment-actions`), and image viewers (`#image-viewer`).
+- 🧩 **Inversion of Control via Slots:** Inject custom author badges (`#author-badge`), authentication CTAs (`#auth-prompt`), custom action menus (`#comment-actions`), and image viewers (`#image-viewer`), and a heading (`#heading`) that shares a row with the sort buttons.
 
 ---
 
@@ -347,6 +347,11 @@ function handleNotification(notification: {
     :locale="'id'"
     @notify="handleNotification"
   >
+    <!-- Heading slot: shares a row with the sort buttons, above the form -->
+    <template #heading>
+      <h2>Komentar</h2>
+    </template>
+
     <!-- Custom Author Badge slot -->
     <template #author-badge="{ author, comment }">
       <span v-if="author.metadata?.isStaff" class="badge-staff">Staff</span>
