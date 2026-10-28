@@ -105,12 +105,17 @@
                   class="cmt-badge cmt-badge--warning"
                   >{{ msg.node.pending }}</span
                 >
+                <!-- Short on screen; the full explanation is the tooltip and what
+                     screen readers read. -->
                 <span
                   v-if="isHidden"
                   :id="`comment-hidden-badge-${comment.id}`"
+                  :title="msg.node.deletedForPublic"
                   class="cmt-badge cmt-badge--danger"
-                  >{{ msg.node.deletedForPublic }}</span
                 >
+                  <span aria-hidden="true">{{ msg.node.deleted }}</span>
+                  <span class="sr-only">{{ msg.node.deletedForPublic }}</span>
+                </span>
               </div>
             </div>
 

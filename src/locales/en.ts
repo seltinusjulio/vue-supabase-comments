@@ -49,6 +49,7 @@ export const en: CommentMessages = {
     pending: "Awaiting moderation",
     pinned: "Pinned",
     continueReply: "Continue reply",
+    deleted: "Deleted",
     deletedForPublic: "Deleted, hidden from the public",
     edit: "Edit",
     editLabel: "Edit comment",

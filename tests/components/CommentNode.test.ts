@@ -124,7 +124,12 @@ describe("CommentNode: status badges and owner actions", () => {
       viewer: SIGNED_IN,
     });
 
-    expect(wrapper.find("#comment-hidden-badge-c1").text()).toBe(
+    const badge = wrapper.find("#comment-hidden-badge-c1");
+    expect(badge.find("[aria-hidden='true']").text()).toBe("Dihapus");
+    expect(badge.find(".sr-only").text()).toBe(
+      "Dihapus, tidak tampil untuk publik",
+    );
+    expect(badge.attributes("title")).toBe(
       "Dihapus, tidak tampil untuk publik",
     );
     expect(wrapper.find("#comment-owner-menu-button-c1").exists()).toBe(true);
