@@ -155,16 +155,6 @@ describe("sortRoots", () => {
     ]);
   });
 
-  it("puts pinned comments first, then the newest", () => {
-    expect(ids(sortRoots(roots, "pinned"))).toEqual([
-      "newer",
-      "pinned-old",
-      "new",
-      "mid",
-      "old",
-    ]);
-  });
-
   it("ignores is_pinned when enablePinning is false", () => {
     expect(sortRoots(roots, "oldest", false)).toBe(roots);
     expect(ids(sortRoots(roots, "newest", false))).toEqual([

@@ -17,7 +17,6 @@ export const en: CommentMessages = {
       newest: "Newest",
       oldest: "Oldest",
       popular: "Most popular",
-      pinned: "Pinned",
     },
     loadMore: (remaining) => `Load more (${remaining} left)`,
   },

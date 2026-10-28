@@ -33,7 +33,7 @@ export interface CommentTreeOptions {
   /** Top-level comments per page. */
   pageSize?: number;
   defaultSortOrder?: CommentSortOrder;
-  /** Whether comment pinning is enabled. When true, defaultSortOrder defaults to "pinned". */
+  /** Whether comment pinning is enabled. */
   enablePinning?: MaybeRefOrGetter<boolean>;
   /**
    * Called for every handled error (e.g. to log it). Return a string to use
@@ -64,8 +64,7 @@ export function useCommentTree(
 ) {
   const pageSize = options.pageSize ?? DEFAULT_PAGE_SIZE;
   const enablePinning = computed(() => Boolean(toValue(options.enablePinning)));
-  const defaultSortOrder =
-    options.defaultSortOrder ?? (enablePinning.value ? "pinned" : "oldest");
+  const defaultSortOrder = options.defaultSortOrder ?? "oldest";
   const messages = computed(
     () => toValue(options.messages) ?? resolveCommentMessages("id"),
   );

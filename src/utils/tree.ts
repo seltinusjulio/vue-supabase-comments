@@ -90,11 +90,9 @@ export function sortRoots(
   order: CommentSortOrder,
   enablePinning = true,
 ): CommentTreeNode[] {
-  const isPinningActive = enablePinning || order === "pinned";
-
-  if (!isPinningActive) {
+  if (!enablePinning) {
     if (order === "oldest") return roots;
-    if (order === "newest" || order === "pinned") return [...roots].sort(byNewest);
+    if (order === "newest") return [...roots].sort(byNewest);
     const score = (c: CommentTreeNode) => c.upvote_count - c.downvote_count;
     return [...roots].sort((a, b) => score(b) - score(a) || byNewest(a, b));
   }
@@ -118,7 +116,7 @@ export function sortRoots(
 
   const sortGroup = (group: CommentTreeNode[]) => {
     if (order === "oldest") return group;
-    if (order === "newest" || order === "pinned") return [...group].sort(byNewest);
+    if (order === "newest") return [...group].sort(byNewest);
     return [...group].sort((a, b) => score(b) - score(a) || byNewest(a, b));
   };
 

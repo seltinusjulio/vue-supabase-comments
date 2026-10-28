@@ -17,7 +17,6 @@ export const id: CommentMessages = {
       newest: "Terbaru",
       oldest: "Terlama",
       popular: "Terpopuler",
-      pinned: "Disematkan",
     },
     loadMore: (remaining) => `Muat lebih banyak (${remaining} tersisa)`,
   },

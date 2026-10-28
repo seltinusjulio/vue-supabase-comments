@@ -4,10 +4,9 @@ export type CommentStatus = "published" | "pending_review" | "hidden";
 export type VoteType = "up" | "down";
 
 /**
- * Top-level sort orders. Replies always stay chronological. `pinned` puts
- * pinned comments first, then newest; it only makes sense with pinning enabled.
+ * Top-level sort orders. Replies always stay chronological.
  */
-export type CommentSortOrder = "newest" | "oldest" | "popular" | "pinned";
+export type CommentSortOrder = "newest" | "oldest" | "popular";
 
 export interface CommentAuthor {
   id: string;

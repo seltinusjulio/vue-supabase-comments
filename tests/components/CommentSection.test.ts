@@ -105,7 +105,7 @@ describe("CommentSection", () => {
       ]);
     });
 
-    it("offers the pinned order first when pinning is enabled", async () => {
+    it("shows pinned badges when pinning is enabled without altering sort options", async () => {
       const { wrapper } = await mountSection({
         rows,
         props: { enablePinning: true },
@@ -113,7 +113,7 @@ describe("CommentSection", () => {
 
       expect(
         wrapper.findAll("#comment-section-sort button").map((b) => b.text()),
-      ).toEqual(["Disematkan", "Terbaru", "Terlama", "Terpopuler"]);
+      ).toEqual(["Terbaru", "Terlama", "Terpopuler"]);
       expect(wrapper.find("#comment-pinned-badge-new").text()).toBe(
         "Disematkan",
       );

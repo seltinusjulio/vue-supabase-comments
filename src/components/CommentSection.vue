@@ -219,11 +219,11 @@ function createOwnTree(): CommentTree {
 const tree = props.tree ?? createOwnTree();
 const { comments, visibleComments, hasMore, error, sortOrder } = tree;
 
-const sortOptions = computed<CommentSortOrder[]>(() =>
-  props.enablePinning
-    ? ["pinned", "newest", "oldest", "popular"]
-    : ["newest", "oldest", "popular"],
-);
+const sortOptions: readonly CommentSortOrder[] = [
+  "newest",
+  "oldest",
+  "popular",
+];
 
 const msg = messages;
 

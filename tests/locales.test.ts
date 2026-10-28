@@ -54,12 +54,12 @@ describe("resolveCommentMessages", () => {
     const loginToVote = "Masuk dulu untuk memberi suara.";
     const messages: CommentMessages = resolveCommentMessages("en", {
       node: { loginToVote },
-      section: { sort: { ...en.section.sort, pinned: "Featured" } },
+      section: { sort: { ...en.section.sort, popular: "Top" } },
     });
 
     expect(messages.node.loginToVote).toBe(loginToVote);
     expect(messages.node.removed).toBe(en.node.removed);
-    expect(messages.section.sort.pinned).toBe("Featured");
+    expect(messages.section.sort.popular).toBe("Top");
     expect(messages.section.sort.newest).toBe("Newest");
     expect(messages.section.emptyTitle).toBe(en.section.emptyTitle);
   });
