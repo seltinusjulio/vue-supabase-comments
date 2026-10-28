@@ -721,6 +721,23 @@ describe("CommentNode: thread layout", () => {
     ).not.toContain("border-l-2");
   });
 
+  it("gives replies a smaller avatar and a matching thread indent", async () => {
+    const { wrapper } = await mountSection({ rows: chain(3) });
+
+    expect(wrapper.find("#comment-avatar-container-d0").classes()).toContain(
+      "h-8",
+    );
+    expect(wrapper.find("#comment-avatar-container-d1").classes()).toContain(
+      "h-6",
+    );
+    expect(wrapper.find("#comment-children-container-d0").classes()).toContain(
+      "pl-[27px]",
+    );
+    expect(wrapper.find("#comment-children-container-d1").classes()).toContain(
+      "pl-[23px]",
+    );
+  });
+
   it("shows a notice for a removed ancestor and keeps its replies", async () => {
     const { wrapper } = await mountSection({
       rows: [item("c2", { parent_comment_id: "gone" })],
