@@ -27,6 +27,13 @@ afterEach(() => {
   document.body.innerHTML = "";
 });
 
+type Wrapper = Awaited<ReturnType<typeof mountSection>>["wrapper"];
+
+/** Opens a comment's "more actions" menu, where owner and moderator actions live. */
+const openActions = async (wrapper: Wrapper, id = "c1") => {
+  await wrapper.find(`#comment-owner-menu-button-${id}`).trigger("click");
+};
+
 const dialog = (id: string) =>
   document.getElementById(`comment-delete-modal-${id}`) as HTMLDialogElement;
 
@@ -37,6 +44,7 @@ describe("CommentNode: delete confirmation", () => {
       viewer: SIGNED_IN,
     });
 
+    await openActions(wrapper);
     await wrapper.find("#comment-delete-button-c1").trigger("click");
 
     expect(dialog("c1").open).toBe(true);
@@ -50,6 +58,7 @@ describe("CommentNode: delete confirmation", () => {
       rows: [own()],
       viewer: SIGNED_IN,
     });
+    await openActions(wrapper);
     await wrapper.find("#comment-delete-button-c1").trigger("click");
 
     await wrapper.find("#comment-delete-cancel-button-c1").trigger("click");
@@ -63,6 +72,7 @@ describe("CommentNode: delete confirmation", () => {
       rows: [own()],
       viewer: SIGNED_IN,
     });
+    await openActions(wrapper);
     await wrapper.find("#comment-delete-button-c1").trigger("click");
 
     dialog("c1").dispatchEvent(new Event("cancel", { cancelable: true }));
@@ -76,6 +86,7 @@ describe("CommentNode: delete confirmation", () => {
       rows: [own()],
       viewer: SIGNED_IN,
     });
+    await openActions(wrapper);
     await wrapper.find("#comment-delete-button-c1").trigger("click");
 
     await wrapper.find("#comment-delete-confirm-button-c1").trigger("click");
@@ -93,6 +104,7 @@ describe("CommentNode: delete confirmation", () => {
       rows: [own()],
       viewer: SIGNED_IN,
     });
+    await openActions(wrapper);
     await wrapper.find("#comment-delete-button-c1").trigger("click");
 
     await wrapper.find("#comment-delete-confirm-button-c1").trigger("click");
@@ -115,7 +127,8 @@ describe("CommentNode: status badges and owner actions", () => {
     expect(wrapper.find("#comment-hidden-badge-c1").text()).toBe(
       "Dihapus, tidak tampil untuk publik",
     );
-    expect(wrapper.find("#comment-owner-actions-c1").exists()).toBe(true);
+    expect(wrapper.find("#comment-owner-menu-button-c1").exists()).toBe(true);
+    await openActions(wrapper);
     expect(wrapper.find("#comment-edit-button-c1").exists()).toBe(false);
     expect(wrapper.find("#comment-delete-button-c1").exists()).toBe(false);
   });
@@ -129,21 +142,42 @@ describe("CommentNode: status badges and owner actions", () => {
     expect(wrapper.find("#comment-pending-badge-c1").text()).toBe(
       "Menunggu moderasi",
     );
+    await openActions(wrapper);
     expect(wrapper.find("#comment-edit-button-c1").exists()).toBe(false);
     expect(wrapper.find("#comment-delete-button-c1").exists()).toBe(true);
   });
 
-  it("uses labelled icon buttons for owner actions", async () => {
+  it("keeps owner actions in a labelled menu with text buttons", async () => {
     const { wrapper } = await mountSection({
       rows: [own()],
       viewer: SIGNED_IN,
     });
 
+    const menu = wrapper.find("#comment-owner-menu-button-c1");
+    expect(menu.attributes("aria-label")).toBe("Aksi lainnya");
+    expect(menu.attributes("aria-expanded")).toBe("false");
+    expect(wrapper.find("#comment-edit-button-c1").exists()).toBe(false);
+
+    await menu.trigger("click");
+
+    expect(menu.attributes("aria-expanded")).toBe("true");
     const edit = wrapper.find("#comment-edit-button-c1");
     const del = wrapper.find("#comment-delete-button-c1");
-    expect(edit.attributes("aria-label")).toBe("Sunting komentar");
-    expect(del.attributes("aria-label")).toBe("Hapus komentar");
+    expect(edit.text()).toBe("Sunting");
+    expect(del.text()).toBe("Hapus");
     expect(del.classes()).toContain("cmt-action--danger");
+  });
+
+  it("closes the menu after an action is chosen", async () => {
+    const { wrapper } = await mountSection({
+      rows: [own()],
+      viewer: SIGNED_IN,
+    });
+    await openActions(wrapper);
+
+    await wrapper.find("#comment-edit-button-c1").trigger("click");
+
+    expect(wrapper.find("#comment-owner-menu-c1").exists()).toBe(false);
   });
 
   it("hides owner actions from other users", async () => {
@@ -152,7 +186,7 @@ describe("CommentNode: status badges and owner actions", () => {
       viewer: SIGNED_IN,
     });
 
-    expect(wrapper.find("#comment-owner-actions-c1").exists()).toBe(false);
+    expect(wrapper.find("#comment-owner-menu-button-c1").exists()).toBe(false);
   });
 
   it("only allows editing inside the edit window", async () => {
@@ -161,6 +195,7 @@ describe("CommentNode: status badges and owner actions", () => {
       viewer: SIGNED_IN,
       props: { editWindowMinutes: 15 },
     });
+    await openActions(wrapper);
     expect(wrapper.find("#comment-edit-button-c1").exists()).toBe(true);
 
     vi.advanceTimersByTime(6 * 60_000);
@@ -176,6 +211,7 @@ describe("CommentNode: status badges and owner actions", () => {
       viewer: SIGNED_IN,
       props: { editWindowMinutes: 15 },
     });
+    await openActions(wrapper);
 
     expect(wrapper.find("#comment-edit-button-c1").exists()).toBe(false);
   });
@@ -457,6 +493,7 @@ describe("CommentNode: attachments", () => {
 describe("CommentNode: editing", () => {
   const startEditing = async () => {
     const mounted = await mountSection({ rows: [own()], viewer: SIGNED_IN });
+    await openActions(mounted.wrapper);
     await mounted.wrapper.find("#comment-edit-button-c1").trigger("click");
     return mounted;
   };
@@ -468,7 +505,7 @@ describe("CommentNode: editing", () => {
       (wrapper.find("#comment-edit-textarea-c1").element as HTMLTextAreaElement)
         .value,
     ).toBe("Halo");
-    expect(wrapper.find("#comment-owner-actions-c1").exists()).toBe(false);
+    expect(wrapper.find("#comment-owner-menu-button-c1").exists()).toBe(false);
   });
 
   it("cancels without saving", async () => {
@@ -520,6 +557,7 @@ describe("CommentNode: editing", () => {
       viewer: SIGNED_IN,
       props: { maxLength: 2000 },
     });
+    await openActions(wrapper);
     await wrapper.find("#comment-edit-button-c1").trigger("click");
 
     expect(
@@ -961,6 +999,7 @@ describe("CommentNode: moderation actions", () => {
       viewer: { ...SIGNED_IN, canModerate: true },
     });
 
+    await openActions(wrapper);
     const approveBtn = wrapper.find("#comment-approve-button-c1");
     expect(approveBtn.exists()).toBe(true);
 
@@ -988,6 +1027,7 @@ describe("CommentNode: moderation actions", () => {
       viewer: { ...SIGNED_IN, canModerate: true },
     });
 
+    await openActions(wrapper);
     const approveBtn = wrapper.find("#comment-approve-button-c1");
     await approveBtn.trigger("click");
     await flushPromises();
@@ -1007,6 +1047,7 @@ describe("CommentNode: moderation actions", () => {
       props: { enablePinning: true },
     });
 
+    await openActions(wrapper);
     const pinBtn = wrapper.find("#comment-pin-button-c1");
     expect(pinBtn.exists()).toBe(true);
 
@@ -1026,6 +1067,7 @@ describe("CommentNode: moderation actions", () => {
       props: { enablePinning: true },
     });
 
+    await openActions(wrapper);
     const pinBtn = wrapper.find("#comment-pin-button-c1");
     await pinBtn.trigger("click");
     await flushPromises();
@@ -1049,6 +1091,8 @@ describe("CommentNode: moderation actions", () => {
       props: { enablePinning: true },
     });
 
+    await openActions(wrapper, "root");
+    await openActions(wrapper, "reply");
     expect(wrapper.find("#comment-pin-button-root").exists()).toBe(true);
     expect(wrapper.find("#comment-pin-button-reply").exists()).toBe(false);
     expect(wrapper.find("#comment-pinned-badge-reply").exists()).toBe(false);
