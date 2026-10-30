@@ -26,13 +26,14 @@ If a change names something from one host, it belongs in that host.
    repo, not inside a consumer's `packages/comments`. A submodule is always a
    detached HEAD, and its local `main` goes stale.
 2. Branch from `origin/main`, open a PR, and merge it with a merge commit.
-3. This repo has no dev dependencies, scripts, or CI of its own. Its tests and
-   typecheck run through a consumer: push the branch, check it out inside that
-   consumer's `packages/comments`, then run the consumer's
-   `npm run typecheck:comments` and `npx vitest run packages/comments`.
-   Do not commit the consumer's pointer while testing.
-4. Check the branch in both consumers before merging when the change touches
-   anything they share (types, adapter contract, props, message keys).
+3. Run `npm ci`, `npm run typecheck`, and `npm test` in this repo. CI runs the
+   same three steps on every push to `main` and on every PR.
+4. When a change touches anything the consumers share (types, adapter
+   contract, props, message keys), also check the branch in both consumers
+   before merging: check it out inside that consumer's `packages/comments`
+   and run the consumer's `npm run typecheck:comments` and
+   `npx vitest run packages/comments`. Do not commit the consumer's pointer
+   while testing.
 
 ## Bumping consumers
 
@@ -40,7 +41,9 @@ After the module PR is merged, open one small PR per consumer
 (`chore/bump-comments-module`) that moves the submodule pointer.
 
 - A pointer may only reference a commit that is on this repo's `origin/main`.
-  Never commit a pointer to an unmerged branch.
+  Never commit a pointer to an unmerged branch. Each consumer's CI enforces
+  this with `git merge-base --is-ancestor`, so a pointer to a branch-only
+  commit fails the build.
 - Run the consumer's comments typecheck and the tests that touch comments
   before merging the bump.
 
@@ -51,6 +54,21 @@ needs:
 
 - an entry under "Unreleased" in `CHANGELOG.md`, and
 - bump PRs in both consumers on the same day, so neither is left behind.
+
+## Releases
+
+Releases are annotated git tags named `vX.Y.Z` on a merge commit on `main`.
+The consumers still point at a commit, not a tag; the tag makes the history
+and `CHANGELOG.md` readable.
+
+To release, in one PR: set `version` in `package.json` and move the
+"Unreleased" entries in `CHANGELOG.md` under a heading for that version and
+date. After the PR is merged, tag the merge commit and push the tag:
+
+```bash
+git tag -a vX.Y.Z -m "vX.Y.Z" <merge-commit>
+git push origin vX.Y.Z
+```
 
 ## Keeping the checkouts clean
 
