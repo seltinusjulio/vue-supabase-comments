@@ -857,9 +857,6 @@ const resolveTargetLabel = (comment: CommentModerationItem): string => {
     const label = props.targetLabel(comment);
     if (label) return label;
   }
-  if (comment.target_type === "song") return msg.value.moderation.targetSong;
-  if (comment.target_type === "article")
-    return msg.value.moderation.targetArticle;
   return comment.target_type;
 };
 
