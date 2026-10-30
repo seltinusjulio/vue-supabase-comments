@@ -142,8 +142,6 @@ export const id: CommentMessages = {
     errorBan: "Gagal memblokir pengguna.",
     successUnbanned: "Blokir pengguna berhasil dibatalkan.",
     errorUnban: "Gagal membatalkan blokir pengguna.",
-    targetSong: "Lagu",
-    targetArticle: "Artikel",
     deletePermanently: "Hapus Permanen",
     deleteConfirmTitle: "Hapus Komentar Permanen",
     deleteConfirmMessage:

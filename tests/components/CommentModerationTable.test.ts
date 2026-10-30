@@ -288,7 +288,7 @@ describe("CommentModerationTable", () => {
     );
   });
 
-  it("resolves target labels and URLs", async () => {
+  it("labels the target with the targetLabel prop and links it with targetUrl", async () => {
     const adapter = createFakeAdapter();
     adapter.fetchModerationQueue.mockResolvedValueOnce([
       modItem("c1", { target_id: "lagu-123", target_type: "song" }),
@@ -298,6 +298,7 @@ describe("CommentModerationTable", () => {
       props: {
         adapter,
         targetUrl: (c) => `/songs/${c.target_id}`,
+        targetLabel: () => "Lagu",
       },
     });
     await flushPromises();
@@ -307,6 +308,20 @@ describe("CommentModerationTable", () => {
     expect(link.attributes("id")).toBe("comment-target-link-c1");
     expect(link.attributes("href")).toBe("/songs/lagu-123");
     expect(link.text()).toBe("Lagu");
+  });
+
+  it("falls back to the raw target_type when no targetLabel is given", async () => {
+    const adapter = createFakeAdapter();
+    adapter.fetchModerationQueue.mockResolvedValueOnce([
+      modItem("c1", { target_id: "lagu-123", target_type: "song" }),
+    ]);
+
+    const wrapper = mount(CommentModerationTable, {
+      props: { adapter, targetUrl: (c) => `/songs/${c.target_id}` },
+    });
+    await flushPromises();
+
+    expect(wrapper.find("#comment-target-c1 a").text()).toBe("song");
   });
 
   it("renders hard-delete button when adapter supports it and canHardDelete is true", async () => {

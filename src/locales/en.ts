@@ -142,8 +142,6 @@ export const en: CommentMessages = {
     errorBan: "Failed to ban user.",
     successUnbanned: "User unbanned successfully.",
     errorUnban: "Failed to unban user.",
-    targetSong: "Song",
-    targetArticle: "Article",
     deletePermanently: "Delete Permanently",
     deleteConfirmTitle: "Delete Comment Permanently",
     deleteConfirmMessage:

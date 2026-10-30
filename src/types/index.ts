@@ -304,8 +304,6 @@ export interface CommentMessages {
     errorBan: string;
     successUnbanned: string;
     errorUnban: string;
-    targetSong: string;
-    targetArticle: string;
     deletePermanently: string;
     deleteConfirmTitle: string;
     deleteConfirmMessage: string;
